@@ -1,7 +1,18 @@
 var blueNode;
 var redNode;
-
+var isDragging=false;
+var startX,startY;
 var ctx;
+var Nodes=[];
+var offsetX,offsetY;
+var selectedShapeIndex;
+
+function reOffset(){
+    var c = document.getElementById('canvas');
+    var BB=c.getBoundingClientRect();
+    offsetX=BB.left;
+    offsetY=BB.top;        
+}
 
 function Init()
 {
@@ -12,6 +23,41 @@ function Init()
      
       ctx = canvas.getContext('2d');
     }
+    canvas.onmousedown=handleMouseDown;
+    canvas.onmousemove=handleMouseMove;
+    canvas.onmouseup=handleMouseUp;
+    canvas.onmouseout=handleMouseOut;
+    window.onscroll=function(e){ reOffset(); }
+    window.onresize=function(e){ reOffset(); }
+    canvas.onresize=function(e){ reOffset(); }
+    reOffset();
+    //TEST
+
+
+    /*
+    let myNode = new WebNode(ctx,"Flow Node",50,80,200,100,0);
+    myNode.AddInput("INPUT A",0,0);
+    myNode.AddOutput("OUTPUT A",0,0);
+    myNode.AddOutput("OUTPUT B",0,0);
+    Nodes.push( myNode );
+    myNode = new WebNode(ctx,"Function Node",350,80,200,100,1);
+    myNode.AddInput("INPUT A",0,0);
+    myNode.AddInput("INPUT B",0,0);
+    myNode.AddInput("INPUT C",0,0);
+    myNode.AddOutput("OUTPUT",0,0); 
+    Nodes.push( myNode );
+    myNode = new WebNode(ctx,"My Node",250,120,200,100,1);
+    myNode.AddInput("INPUT X",0,0);
+    myNode.AddInput("INPUT Y",0,0);
+
+    myNode.AddOutput("OUTPUT A",0,0); 
+    myNode.AddOutput("OUTPUT B",0,0);
+    Nodes.push( myNode );
+*/
+
+    $.get("editorfunctions.php?action=load-project", function(data, status){
+        alert("Data: " + data + "\nStatus: " + status);
+    });
 
 }
 
@@ -21,10 +67,13 @@ function draw() {
     ctx.fillRect(0, 0, w, h);
 
     drawGrid(ctx,w,h);
+    for (let index = 0; index < Nodes.length; index++) {
+        Nodes[index].drawThisNode();
+        
+    }
+    //drawNode(ctx,50,80,200,100,0);
 
-    drawNode(ctx,50,80,200,100,0);
-
-    drawNode(ctx,350,80,200,100,1);
+    //drawNode(ctx,350,80,200,100,1);
     
   }
 
@@ -75,7 +124,7 @@ function drawText(context,x,y,size,text,color)
     ctx.fillText(text,x,y);
 }
 
-function drawNode(context,x,y,w,h,t)
+function drawNode(context,name,x,y,w,h,t)
 {
     var radius = 20;
     var fontsize =12;
@@ -94,8 +143,9 @@ function drawNode(context,x,y,w,h,t)
             g = redNodeGradient(ctx,x,y,w,h);
     }
     roundRect(context,x, y, w, h, radius, g);
-    drawText(context,x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,'Node','white');
+    drawText(context,x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,name,'white');
 }
+
 
 
 function roundRect(context,x, y, w, h, radius, gradient)
@@ -138,3 +188,181 @@ function roundRect(context,x, y, w, h, radius, gradient)
   context.fill();
   context.closePath();
 }
+
+function handleMouseDown(e){
+    // tell the browser we're handling this event
+    e.preventDefault();
+    e.stopPropagation();
+    startX=parseInt(e.clientX-offsetX);
+    startY=parseInt(e.clientY-offsetY); 
+    for(var i=0;i<Nodes.length;i++){
+        if(isMouseInNode(startX,startY,Nodes[i]))
+        {
+            selectedShapeIndex=i;
+            // set the isDragging flag
+            isDragging=true;
+            // and return (==stop looking for 
+            //     further shapes under the mouse)
+            return;
+        }
+    }
+}
+
+function handleMouseUp(e){
+    // return if we're not dragging
+    if(!isDragging){return;}
+    // tell the browser we're handling this event
+    e.preventDefault();
+    e.stopPropagation();
+    // the drag is over -- clear the isDragging flag
+    isDragging=false;
+}
+
+function handleMouseOut(e){
+    // return if we're not dragging
+    if(!isDragging){return;}
+    // tell the browser we're handling this event
+    e.preventDefault();
+    e.stopPropagation();
+    // the drag is over -- clear the isDragging flag
+    isDragging=false;
+}
+
+function handleMouseMove(e){
+    // return if we're not dragging
+    if(!isDragging){return;}
+    // tell the browser we're handling this event
+    e.preventDefault();
+    e.stopPropagation();
+    // calculate the current mouse position         
+    mouseX=parseInt(e.clientX-offsetX);
+    mouseY=parseInt(e.clientY-offsetY);
+    // how far has the mouse dragged from its previous mousemove position?
+    var dx=mouseX-startX;
+    var dy=mouseY-startY;
+    // move the selected shape by the drag distance
+    var selectedNode=Nodes[selectedShapeIndex];
+    selectedNode.x+=dx;
+    selectedNode.y+=dy;
+    // clear the canvas and redraw all shapes
+    draw();
+    // update the starting drag position (== the current mouse position)
+    startX=mouseX;
+    startY=mouseY;
+}
+
+function isMouseInNode(mx,my,node)
+{
+    if( mx>node.x && mx<node.x+node.w && my>node.y && my<node.y+node.h){
+        return(true);
+    } else {
+        return(false);
+    }  
+}
+
+function isMouseInShape(mx,my,x,y,w,h)
+{
+    if( mx>x && mx<x+w && my>y && my<y+h){
+        return(true);
+    } else {
+        return(false);
+    }  
+}
+
+class WebVar {
+    constructor(name,type,containerType)
+    {
+        this.name = name;
+        this.type = type;
+        this.containerType = containerType;
+    }
+}
+
+
+class WebNode {
+    constructor(context,name,x,y,w,h,t)
+    {
+        this.name = name;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.t = t;
+        this.context = context;
+        this.inputs=[];
+        this.outputs=[];
+        this.radius = 20;
+        this.fontsize = 12;
+        this.g = redNodeGradient(context,x,y,w,h);
+    }
+
+    AddInput(name,type,containerType)
+    {
+        let myInput = new WebVar(name,type,containerType);
+        this.inputs.push(myInput);
+    }
+
+    AddOutput(name,type,containerType)
+    {
+        let myOutput = new WebVar(name,type,containerType);
+        this.outputs.push(myOutput);
+    }
+
+    drawThisNode()
+    {
+
+        switch(this.t)
+        {
+            case 0:
+                this.g = redNodeGradient(this.context,this.x,this.y,this.w,this.h);
+            break;
+    
+            case 1:
+                this.g = blueNodeGradient(this.context,this.x,this.y,this.w,this.h);
+            break;
+    
+            default:
+                this.g = redNodeGradient(this.context,this.x,this.y,this.w,this.h);
+        }
+        roundRect(this.context,this.x, this.y, this.w, this.h, this.radius, this.g);
+        this.context.textAlign = 'left';
+        drawText(this.context,this.x+(this.radius-(this.fontsize/2)),this.y+(this.radius-(this.fontsize/2)),this.fontsize,this.name,'white');
+        this.drawPins(this.inputs,0);
+        this.drawPins(this.outputs,1);
+    }
+
+    drawPins(pins,isIn)
+    {
+        if(isIn==0)
+        {
+            for (let index = 0; index < pins.length; index++) {
+                var pin = pins[index];
+                this.context.beginPath();
+                this.context.arc(this.x+this.radius,this.y+(this.radius*2)+((this.radius)*index),this.radius/3,0,360,0);
+                this.context.strokeStyle = 'white';
+                this.context.lineWidth="3";
+                this.context.stroke();
+                this.context.closePath();
+                this.context.textAlign = 'left';
+                drawText(this.context,this.x+this.radius+(this.radius/2),this.y+(this.radius*2)+((this.radius)*index),this.fontsize*0.75,pin.name,'white');
+
+            }
+        } else {
+            for (let index = 0; index < pins.length; index++) {
+                var pin = pins[index];
+                this.context.beginPath();
+                this.context.arc(this.x+this.w-this.radius,this.y+(this.radius*2)+((this.radius)*index),this.radius/3,0,360,0);
+                this.context.strokeStyle = 'white';
+                this.context.lineWidth="3";
+                this.context.stroke();     
+                this.context.closePath();
+                this.context.textAlign = 'right';
+                drawText(this.context,this.x+this.w-this.radius-(this.radius/2),this.y+(this.radius*2)+((this.radius)*index),this.fontsize*0.75,pin.name,'white');
+           
+            }
+        }
+    }   
+
+
+}
+
