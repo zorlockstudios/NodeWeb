@@ -2,7 +2,8 @@
 <html>
   <head>
     <meta charset="utf-8"/>
-    <title>Canvas tutorial</title>
+    <title>Web Nodes</title>
+    <link rel="stylesheet" href="all.css">
     <?php
 include 'editor.php';
     ?>

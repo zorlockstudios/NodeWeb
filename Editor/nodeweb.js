@@ -14,9 +14,14 @@ var selectedShapeConnectionIndex = -1;
 
 function reOffset(){
     var c = document.getElementById('canvas');
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    w = c.width;
+    h = c.height;
     var BB=c.getBoundingClientRect();
     offsetX=BB.left;
-    offsetY=BB.top;        
+    offsetY=BB.top; 
+    WebDoc.Draw();  
 }
 
 function Init()
@@ -29,6 +34,7 @@ function Init()
      
       ctx = canvas.getContext('2d');
     }
+    WebDoc = new WebNodeDocument(ctx,"document");
     canvas.onmousedown=handleMouseDown;
     canvas.onmousemove=handleMouseMove;
     canvas.onmouseup=handleMouseUp;
@@ -36,10 +42,11 @@ function Init()
     window.onscroll=function(e){ reOffset(); }
     window.onresize=function(e){ reOffset(); }
     canvas.onresize=function(e){ reOffset(); }
+
     reOffset();
     //TEST
 
-    WebDoc = new WebNodeDocument(ctx,"document");
+    
 
     
     let myNode = new WebNode(ctx,"Write Document",50,80,200,100,0);
@@ -143,6 +150,12 @@ function redNodeGradient(ctx,x,y,w,h)
     return redNode;
 }
 
+function drawIcon(context,x,y,size,character,color)
+{
+    context.font = `${size}px Font Awesome 5 Free`;
+    context.fillStyle = color;
+    ctx.fillText(character,x,y);
+}
 
 function drawText(context,x,y,size,text,color)
 {
@@ -656,21 +669,30 @@ class WebNodeDocument
             this.Nodes[index].drawThisNode();
             
         }
-        this.DrawSideBar();
+        this.DrawLeftSideBar();
+        this.DrawRightSideBar();
         this.DrawMenuBar();
     }
 
-    DrawSideBar()
+    DrawLeftSideBar()
     {
         this.context.fillStyle = 'DimGrey';
         this.context.fillRect(0, 50, w/6, h);
 
+    }
+    DrawRightSideBar()
+    {
+        this.context.fillStyle = 'DimGrey';
+        this.context.fillRect(w-(w/6), 50, w/6, h);
     }
 
     DrawMenuBar()
     {
         this.context.fillStyle = 'DimGrey';
         this.context.fillRect(0, 0, w, 50);       
+
+        drawIcon(this.context,60,20,80,decodeURI('%5Cf369'),'white');
+
     }
 
 }
