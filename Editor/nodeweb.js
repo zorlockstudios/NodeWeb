@@ -10,7 +10,7 @@ var offsetX,offsetY;
 var ScrollX=0,ScrollY=0;
 var selectedShapeIndex;
 var selectedShapeConnectionIndex = -1;
-
+var pixelFontLoaded=false;
 
 function reOffset(){
     var c = document.getElementById('canvas');
@@ -33,6 +33,7 @@ function Init()
         w = parseInt(document.getElementById('canvas').getAttribute('width'));
      
       ctx = canvas.getContext('2d');
+      LoadMyFonts(ctx);
     }
     WebDoc = new WebNodeDocument(ctx,"document");
     canvas.onmousedown=handleMouseDown;
@@ -42,7 +43,8 @@ function Init()
     window.onscroll=function(e){ reOffset(); }
     window.onresize=function(e){ reOffset(); }
     canvas.onresize=function(e){ reOffset(); }
-
+    window.addEventListener('DOMContentLoaded',LoadPixelFont);
+    
     reOffset();
     //TEST
 
@@ -159,7 +161,7 @@ function drawIcon(context,x,y,size,character,color)
 
 function drawText(context,x,y,size,text,color)
 {
-    context.font = `${size}px serif`;
+    context.font = `${size}px Roboto`;
     context.fillStyle = color;
     ctx.fillText(text,x,y);
 }
@@ -664,7 +666,7 @@ class WebNodeDocument
         this.context.textAlign = 'right';
         
         drawGrid(this.context,w,h);
-        drawText(this.context,w-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
+        drawText(this.context,w-(w/6)-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
         for (let index = 0; index < this.Nodes.length; index++) {
             this.Nodes[index].drawThisNode();
             
@@ -691,9 +693,48 @@ class WebNodeDocument
         this.context.fillStyle = 'DimGrey';
         this.context.fillRect(0, 0, w, 50);       
 
-        drawIcon(this.context,60,20,80,decodeURI('%5Cf369'),'white');
+        drawIcon(this.context,60,20,80,String.fromCharCode(0xF001),'white');
 
     }
+
+}
+
+function LoadMyFonts(context)
+{
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = 'https://fonts.googleapis.com/css?family=Roboto';
+    document.getElementsByTagName('head')[0].appendChild(link);
+    var image = new Image;
+    image.src = link.href;
+    image.onerror = function() {
+        context.font = '50px "Roboto"';
+        context.textBaseline = 'middle';
+        context.fillText('Hello!', 20, 10);
+        WebDoc.Draw();
+    };
+/*
+    var blink = document.createElement('link');
+    blink.rel = 'stylesheet';
+    //blink.type = 'text/css';
+    blink.href = 'all.css';
+    document.getElementsByTagName('head')[0].appendChild(blink);
+    var bimage = new Image;
+    bimage.src = blink.href;
+    bimage.onerror = function() {
+        context.font = '50px "Font Awesome 5 Free Solid"';
+        context.textBaseline = 'middle';
+        context.fillText('Hello!', 20, 10);
+        WebDoc.Draw();
+    };
+    */
+}
+
+function LoadPixelFont(e)
+{
+    PixelFontCanvas.loadFont('BMFont/', 'FontAwesome.txt', (data) => { pixelFontLoaded=true; });
+
 
 }
 
