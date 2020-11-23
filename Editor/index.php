@@ -2,7 +2,6 @@
 
 //include 'config.php';
 include 'header.php';
-include 'editor.php';
 include 'body.php';
 ?>
 

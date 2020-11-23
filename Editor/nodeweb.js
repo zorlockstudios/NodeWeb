@@ -1,11 +1,14 @@
 var blueNode;
 var redNode;
 var isDragging=false;
+var isConnecting=false;
 var startX,startY;
 var ctx;
 var Nodes=[];
 var offsetX,offsetY;
 var selectedShapeIndex;
+var selectedShapeConnectionIndex = -1;
+
 
 function reOffset(){
     var c = document.getElementById('canvas');
@@ -34,30 +37,49 @@ function Init()
     //TEST
 
 
-    /*
-    let myNode = new WebNode(ctx,"Flow Node",50,80,200,100,0);
-    myNode.AddInput("INPUT A",0,0);
-    myNode.AddOutput("OUTPUT A",0,0);
-    myNode.AddOutput("OUTPUT B",0,0);
+    
+    let myNode = new WebNode(ctx,"Write Document",50,80,200,100,0);
+    myNode.AddInput("",vartypes.FLOW,0);
+    myNode.AddInput("Document Type",vartypes.STRING,0); 
+    myNode.AddInput("Content",vartypes.STRING,0);
+    //myNode.AddOutput("",vartypes.FLOW,0);
+    //myNode.AddOutput("Float",vartypes.FLOAT,0);
     Nodes.push( myNode );
-    myNode = new WebNode(ctx,"Function Node",350,80,200,100,1);
-    myNode.AddInput("INPUT A",0,0);
-    myNode.AddInput("INPUT B",0,0);
-    myNode.AddInput("INPUT C",0,0);
-    myNode.AddOutput("OUTPUT",0,0); 
+    var saveit = JSON.stringify(myNode);
+    myNode = new WebNode(ctx,"Doctype Javascript",350,80,200,100,1);
+    //myNode.AddInput("Float",vartypes.FLOAT,0);
+    //myNode.AddInput("Int",vartypes.INT,0);
+    //myNode.AddInput("string",vartypes.STRING,0);
+    myNode.AddOutput("string",vartypes.STRING,0); 
+    //var saveit = JSON.stringify(myNode);
     Nodes.push( myNode );
-    myNode = new WebNode(ctx,"My Node",250,120,200,100,1);
-    myNode.AddInput("INPUT X",0,0);
-    myNode.AddInput("INPUT Y",0,0);
+    myNode = new WebNode(ctx,"Create Vector",250,120,200,100,1);
+    myNode.AddInput("INPUT X",vartypes.FLOAT,0);
+    myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
 
-    myNode.AddOutput("OUTPUT A",0,0); 
-    myNode.AddOutput("OUTPUT B",0,0);
-    Nodes.push( myNode );
-*/
+    myNode.AddOutput("Vector 2",vartypes.VECTOR2,0); 
 
-    $.get("editorfunctions.php?action=load-project", function(data, status){
+    Nodes.push( myNode );
+
+    myNode = new WebNode(ctx,"Set Some Vector2",350,80,200,100,0);
+    myNode.AddInput("",vartypes.FLOW,0);
+    myNode.AddOutput("",vartypes.FLOW,0);   
+    myNode.AddInput("Vector2",vartypes.VECTOR2,0);
+    Nodes.push( myNode );
+
+    myNode = new WebNode(ctx,"GET X",350,280,200,100,1);
+    myNode.AddOutput("Float",vartypes.FLOAT,0);
+    Nodes.push( myNode );
+    myNode = new WebNode(ctx,"GET Y",350,180,200,100,1);
+    myNode.AddOutput("Float",vartypes.FLOAT,0);
+    Nodes.push( myNode );
+
+    $.post("editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/PHP/WriteDocument.json", "node" : saveit});
+      /*
+    $.get("editorfunctions.php?action=load-nodes", function(data, status){
         alert("Data: " + data + "\nStatus: " + status);
     });
+    */
 
 }
 
@@ -146,7 +168,15 @@ function drawNode(context,name,x,y,w,h,t)
     drawText(context,x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,name,'white');
 }
 
-
+function drawConnection(context,startx,starty,ax,ay,bx,by)
+{
+    context.beginPath();
+    context.lineWidth="4";
+    context.moveTo(startx, starty);
+    context.quadraticCurveTo(ax,ay,bx,by);
+    context.stroke();
+    context.closePath();
+}
 
 function roundRect(context,x, y, w, h, radius, gradient)
 {
@@ -205,32 +235,92 @@ function handleMouseDown(e){
             //     further shapes under the mouse)
             return;
         }
+        if(isMouseInPin(startX,startY,Nodes[i]))
+        {
+            
+            if(!isConnecting)
+            {
+                selectedShapeIndex=i;
+                isConnecting=true;
+            } else {
+                selectedShapeConnectionIndex = i;
+            }
+            
+            //refresh
+            draw();
+            return;
+        }
     }
 }
 
 function handleMouseUp(e){
     // return if we're not dragging
-    if(!isDragging){return;}
+    if(!isDragging && !isConnecting){return;}
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
     // the drag is over -- clear the isDragging flag
     isDragging=false;
+    if(isConnecting)
+    {
+        //create the connection if it exists. 
+        var node = Nodes[selectedShapeIndex];
+        if(node.selectedinputPin>-1)
+        {
+            if(selectedShapeConnectionIndex>-1)
+            {
+                var selnode = Nodes[selectedShapeConnectionIndex];
+                if(selnode.selectedoutputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
+                {
+                    if(node.inputs[node.selectedinputPin].t==selnode.outputs[selnode.selectedoutputPin].t)
+                    {
+                        node.inputs[node.selectedinputPin].AddConnection(selnode.outputs[selnode.selectedoutputPin]);
+                        selnode.outputs[selnode.selectedoutputPin].AddConnection(node.inputs[node.selectedinputPin]);
+                    }
+                }
+            }
+        }
+        else if(node.selectedoutputPin >-1)
+        {
+            if(selectedShapeConnectionIndex>-1)
+            {
+                var selnode = Nodes[selectedShapeConnectionIndex];
+                if(selnode.selectedinputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
+                {
+                    if(node.outputs[node.selectedoutputPin].t==selnode.inputs[selnode.selectedinputPin].t)
+                    {
+                        node.outputs[node.selectedoutputPin].AddConnection(selnode.inputs[selnode.selectedinputPin]);
+                        selnode.inputs[selnode.selectedinputPin].AddConnection(node.outputs[node.selectedoutputPin]);
+                    }
+                }
+            }
+        }
+    }
+
+    isConnecting=false;
+    draw();
 }
 
 function handleMouseOut(e){
     // return if we're not dragging
-    if(!isDragging){return;}
+    if(!isDragging && !isConnecting){return;}
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
     // the drag is over -- clear the isDragging flag
     isDragging=false;
+    isConnecting=false;
+    draw();
 }
 
 function handleMouseMove(e){
     // return if we're not dragging
-    if(!isDragging){return;}
+    if(!isDragging && !isConnecting)
+    {
+        return;
+    }
+    if(isDragging){
+        
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
@@ -249,11 +339,65 @@ function handleMouseMove(e){
     // update the starting drag position (== the current mouse position)
     startX=mouseX;
     startY=mouseY;
+    return;
+    }
+    if(isConnecting)
+    {
+        e.preventDefault();
+        e.stopPropagation();
+
+        mouseX=parseInt(e.clientX-offsetX);
+        mouseY=parseInt(e.clientY-offsetY);
+
+        var dx=mouseX-startX;
+        var dy=mouseY-startY;
+        var nx = 0;
+        var ny = 0;
+        var selectedNode=Nodes[selectedShapeIndex];
+        draw();
+        if(selectedNode.selectedinputPin>-1)
+        {
+            nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
+            ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
+            selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
+            drawConnection(selectedNode.context,nx,ny,nx-50,ny,mouseX,mouseY);
+            
+           
+        }
+        if(selectedNode.selectedoutputPin>-1)
+        {
+            nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
+            ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
+            selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
+            drawConnection(selectedNode.context,nx,ny,nx+50,ny,mouseX,mouseY);
+            
+           
+        }
+        for(var i=0;i<Nodes.length;i++)
+        {
+
+            if(isMouseInPin(startX,startY,Nodes[i]))
+            {
+                
+
+                selectedShapeConnectionIndex = i;
+
+            }
+        }
+        startX=mouseX;
+        startY=mouseY;
+        return;
+    }
+}
+
+function isMouseInPin(mx,my,node)
+{
+    return(node.OverPin(mx,my));
 }
 
 function isMouseInNode(mx,my,node)
 {
-    if( mx>node.x && mx<node.x+node.w && my>node.y && my<node.y+node.h){
+    if( mx>node.x && mx<node.x+node.w && my>node.y && my<node.y+node.radius){
         return(true);
     } else {
         return(false);
@@ -269,12 +413,50 @@ function isMouseInShape(mx,my,x,y,w,h)
     }  
 }
 
+class WebPinConnection {
+
+    constructor(t,A,B)
+    {
+        this.t = t;
+        this.A = A;
+        this.B = B;
+    }
+}
+
 class WebVar {
-    constructor(name,type,containerType)
+    constructor(name,t,parent,containerType)
     {
         this.name = name;
-        this.type = type;
+        this.t = t;
         this.containerType = containerType;
+        this.x = 0;
+        this.y = 0;
+        this.connections=[];
+        this.parent = parent;
+    }
+
+    toJSON()
+    {
+        return {
+            "name" : this.name,
+            "t" : this.t,
+            "containerType" : this.containerType,
+            "x" : this.x,
+            "y" : this.y,
+            "connections" : this.connections,
+        };
+    }
+
+    AddConnection(pin)
+    {
+        let con = new WebPinConnection(0,this,pin);
+        this.connections.push(con);
+    }
+
+    SetPinLocation(x,y)
+    {
+        this.x = x;
+        this.y = y;
     }
 }
 
@@ -294,17 +476,45 @@ class WebNode {
         this.radius = 20;
         this.fontsize = 12;
         this.g = redNodeGradient(context,x,y,w,h);
+        this.selectedinputPin = -1;
+        this.selectedoutputPin = -1;
     }
 
-    AddInput(name,type,containerType)
+    OverPin(mx,my)
     {
-        let myInput = new WebVar(name,type,containerType);
+        var isover = false;
+        
+        for (let index = 0; index < this.inputs.length; index++) {
+            var pin = this.inputs[index];
+            if( mx>this.x+pin.x-(this.radius/6) && mx<this.x+pin.y+(this.radius/6) && my>this.y+pin.y-(this.radius/6) && my<this.y+pin.y+(this.radius/6)){
+                this.selectedinputPin = index;
+                this.selectedoutputPin = -1;
+                return(true);
+            }
+        } 
+        
+        for (let index = 0; index < this.outputs.length; index++) {
+            var pin = this.outputs[index];
+            if( mx>this.x+pin.x-(this.radius/6) && mx<this.x+pin.x+(this.radius/6) && my>this.y+pin.y-(this.radius/6) && my<this.y+pin.y+(this.radius/6)){
+                this.selectedoutputPin = index;
+                this.selectedinputPin = -1;
+                return(true);
+            }           
+        }
+        return(isover);
+    }
+
+    AddInput(name,t,containerType)
+    {
+        let myInput = new WebVar(name,t,this,containerType);       
+        myInput.SetPinLocation(this.radius,(this.radius*2)+((this.radius)*this.inputs.length));
         this.inputs.push(myInput);
     }
 
-    AddOutput(name,type,containerType)
+    AddOutput(name,t,containerType)
     {
-        let myOutput = new WebVar(name,type,containerType);
+        let myOutput = new WebVar(name,t,this,containerType);
+        myOutput.SetPinLocation(this.w-this.radius,(this.radius*2)+((this.radius)*this.outputs.length));
         this.outputs.push(myOutput);
     }
 
@@ -331,6 +541,18 @@ class WebNode {
         this.drawPins(this.outputs,1);
     }
 
+    drawConnections(pin,control)
+    {
+        
+        for (let index = 0; index < pin.connections.length; index++) 
+        {
+            var con = pin.connections[index];
+            this.context.strokeStyle = colortype(pin.t); 
+            drawConnection(this.context,this.x+pin.x,this.y+pin.y,this.x+pin.x+control,this.y+pin.y,((this.x+pin.x)+(con.B.parent.x+con.B.x))/2,((con.B.parent.y+con.B.y)+(this.y+pin.y))/2);
+        }
+        
+    }
+
     drawPins(pins,isIn)
     {
         if(isIn==0)
@@ -338,26 +560,39 @@ class WebNode {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
                 this.context.beginPath();
-                this.context.arc(this.x+this.radius,this.y+(this.radius*2)+((this.radius)*index),this.radius/3,0,360,0);
-                this.context.strokeStyle = 'white';
+                this.context.arc(this.x+pin.x,this.y+pin.y,this.radius/3,0,360,0);
+                if(this.selectedinputPin==index && isConnecting)
+                {
+                    this.context.strokeStyle = colortype(pin.t); 
+                } else {
+                    this.context.strokeStyle = colortype(pin.t);  
+                }
+                //this.context.strokeStyle = 'white';
                 this.context.lineWidth="3";
                 this.context.stroke();
                 this.context.closePath();
                 this.context.textAlign = 'left';
-                drawText(this.context,this.x+this.radius+(this.radius/2),this.y+(this.radius*2)+((this.radius)*index),this.fontsize*0.75,pin.name,'white');
-
+                drawText(this.context,this.x+pin.x+(this.radius/2),this.y+pin.y,this.fontsize*0.75,pin.name,'white');
+                this.drawConnections(pin,-50);
             }
         } else {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
                 this.context.beginPath();
-                this.context.arc(this.x+this.w-this.radius,this.y+(this.radius*2)+((this.radius)*index),this.radius/3,0,360,0);
-                this.context.strokeStyle = 'white';
+                this.context.arc(this.x+pin.x,this.y+pin.y,this.radius/3,0,360,0);
+                if(this.selectedoutputPin==index && isConnecting)
+                {
+                    this.context.strokeStyle = colortype(pin.t); 
+                } else {
+                    this.context.strokeStyle = colortype(pin.t);  
+                }
+                //this.context.strokeStyle = 'white';
                 this.context.lineWidth="3";
                 this.context.stroke();     
                 this.context.closePath();
                 this.context.textAlign = 'right';
-                drawText(this.context,this.x+this.w-this.radius-(this.radius/2),this.y+(this.radius*2)+((this.radius)*index),this.fontsize*0.75,pin.name,'white');
+                drawText(this.context,this.x+pin.x-(this.radius/2),this.y+pin.y,this.fontsize*0.75,pin.name,'white');
+                this.drawConnections(pin,50);
            
             }
         }
