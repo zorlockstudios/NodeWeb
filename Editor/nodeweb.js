@@ -2,10 +2,12 @@ var blueNode;
 var redNode;
 var isDragging=false;
 var isConnecting=false;
+var isScrolling=false;
 var startX,startY;
 var ctx;
-var Nodes=[];
+var WebDoc;
 var offsetX,offsetY;
+var ScrollX=0,ScrollY=0;
 var selectedShapeIndex;
 var selectedShapeConnectionIndex = -1;
 
@@ -19,6 +21,7 @@ function reOffset(){
 
 function Init()
 {
+    
     var canvas = document.getElementById('canvas');
     if (canvas.getContext) {
         h = parseInt(document.getElementById('canvas').getAttribute('height'));
@@ -36,6 +39,7 @@ function Init()
     reOffset();
     //TEST
 
+    WebDoc = new WebNodeDocument(ctx,"document");
 
     
     let myNode = new WebNode(ctx,"Write Document",50,80,200,100,0);
@@ -44,37 +48,38 @@ function Init()
     myNode.AddInput("Content",vartypes.STRING,0);
     //myNode.AddOutput("",vartypes.FLOW,0);
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
-    Nodes.push( myNode );
-    var saveit = JSON.stringify(myNode);
+    WebDoc.Nodes.push( myNode );
+    
     myNode = new WebNode(ctx,"Doctype Javascript",350,80,200,100,1);
     //myNode.AddInput("Float",vartypes.FLOAT,0);
     //myNode.AddInput("Int",vartypes.INT,0);
     //myNode.AddInput("string",vartypes.STRING,0);
     myNode.AddOutput("string",vartypes.STRING,0); 
     //var saveit = JSON.stringify(myNode);
-    Nodes.push( myNode );
+    WebDoc.Nodes.push( myNode );
     myNode = new WebNode(ctx,"Create Vector",250,120,200,100,1);
     myNode.AddInput("INPUT X",vartypes.FLOAT,0);
     myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
 
     myNode.AddOutput("Vector 2",vartypes.VECTOR2,0); 
 
-    Nodes.push( myNode );
+    WebDoc.Nodes.push( myNode );
 
     myNode = new WebNode(ctx,"Set Some Vector2",350,80,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddOutput("",vartypes.FLOW,0);   
     myNode.AddInput("Vector2",vartypes.VECTOR2,0);
-    Nodes.push( myNode );
+    WebDoc.Nodes.push( myNode );
 
     myNode = new WebNode(ctx,"GET X",350,280,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
-    Nodes.push( myNode );
+    WebDoc.Nodes.push( myNode );
     myNode = new WebNode(ctx,"GET Y",350,180,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
-    Nodes.push( myNode );
-
-    $.post("editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/PHP/WriteDocument.json", "node" : saveit});
+    WebDoc.Nodes.push( myNode );
+    WebDoc.Draw();
+    //var saveit = JSON.stringify(WebDoc);
+    //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
       /*
     $.get("editorfunctions.php?action=load-nodes", function(data, status){
         alert("Data: " + data + "\nStatus: " + status);
@@ -82,15 +87,15 @@ function Init()
     */
 
 }
-
+/*
 function draw() {
     
     ctx.fillStyle = 'rgb(0, 0, 0)';
     ctx.fillRect(0, 0, w, h);
 
     drawGrid(ctx,w,h);
-    for (let index = 0; index < Nodes.length; index++) {
-        Nodes[index].drawThisNode();
+    for (let index = 0; index < WebDoc.Nodes.length; index++) {
+        WebDoc.Nodes[index].drawThisNode();
         
     }
     //drawNode(ctx,50,80,200,100,0);
@@ -98,7 +103,7 @@ function draw() {
     //drawNode(ctx,350,80,200,100,1);
     
   }
-
+*/
 function drawGrid(context,w,h) {
     // Box width
     var bw = w;
@@ -223,53 +228,64 @@ function handleMouseDown(e){
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
-    startX=parseInt(e.clientX-offsetX);
-    startY=parseInt(e.clientY-offsetY); 
-    for(var i=0;i<Nodes.length;i++){
-        if(isMouseInNode(startX,startY,Nodes[i]))
-        {
-            selectedShapeIndex=i;
-            // set the isDragging flag
-            isDragging=true;
-            // and return (==stop looking for 
-            //     further shapes under the mouse)
-            return;
-        }
-        if(isMouseInPin(startX,startY,Nodes[i]))
-        {
-            
-            if(!isConnecting)
+
+    if(e.button==0)
+    {
+        startX=parseInt(e.clientX-offsetX);
+        startY=parseInt(e.clientY-offsetY); 
+        for(var i=0;i<WebDoc.Nodes.length;i++){
+            if(isMouseInNode(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
             {
                 selectedShapeIndex=i;
-                isConnecting=true;
-            } else {
-                selectedShapeConnectionIndex = i;
+                // set the isDragging flag
+                isDragging=true;
+                // and return (==stop looking for 
+                //     further shapes under the mouse)
+                return;
             }
-            
-            //refresh
-            draw();
-            return;
+            if(isMouseInPin(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
+            {
+                
+                if(!isConnecting)
+                {
+                    selectedShapeIndex=i;
+                    isConnecting=true;
+                } else {
+                    selectedShapeConnectionIndex = i;
+                }
+                
+                //refresh
+                WebDoc.Draw();
+                return;
+            }
         }
+    } else if(e.button==1)
+    {
+        startX=parseInt(e.clientX-offsetX)-ScrollX;
+        startY=parseInt(e.clientY-offsetY)-ScrollY; 
+        isScrolling = true;
     }
+
 }
 
 function handleMouseUp(e){
     // return if we're not dragging
-    if(!isDragging && !isConnecting){return;}
+    if(!isDragging && !isConnecting && !isScrolling){return;}
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
     // the drag is over -- clear the isDragging flag
     isDragging=false;
+    isScrolling=false;
     if(isConnecting)
     {
         //create the connection if it exists. 
-        var node = Nodes[selectedShapeIndex];
+        var node = WebDoc.Nodes[selectedShapeIndex];
         if(node.selectedinputPin>-1)
         {
             if(selectedShapeConnectionIndex>-1)
             {
-                var selnode = Nodes[selectedShapeConnectionIndex];
+                var selnode = WebDoc.Nodes[selectedShapeConnectionIndex];
                 if(selnode.selectedoutputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
                 {
                     if(node.inputs[node.selectedinputPin].t==selnode.outputs[selnode.selectedoutputPin].t)
@@ -284,7 +300,7 @@ function handleMouseUp(e){
         {
             if(selectedShapeConnectionIndex>-1)
             {
-                var selnode = Nodes[selectedShapeConnectionIndex];
+                var selnode = WebDoc.Nodes[selectedShapeConnectionIndex];
                 if(selnode.selectedinputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
                 {
                     if(node.outputs[node.selectedoutputPin].t==selnode.inputs[selnode.selectedinputPin].t)
@@ -298,26 +314,42 @@ function handleMouseUp(e){
     }
 
     isConnecting=false;
-    draw();
+    WebDoc.Draw();
 }
 
 function handleMouseOut(e){
     // return if we're not dragging
-    if(!isDragging && !isConnecting){return;}
+    if(!isDragging && !isConnecting && !isScrolling){return;}
     // tell the browser we're handling this event
     e.preventDefault();
     e.stopPropagation();
     // the drag is over -- clear the isDragging flag
     isDragging=false;
     isConnecting=false;
-    draw();
+    isScrolling=false;
+    WebDoc.Draw();
 }
 
 function handleMouseMove(e){
     // return if we're not dragging
-    if(!isDragging && !isConnecting)
+    if(!isDragging && !isConnecting && !isScrolling)
     {
         return;
+    }
+    if(isScrolling)
+    {
+        e.preventDefault();
+        e.stopPropagation();
+
+        mouseX=parseInt(e.clientX-offsetX);
+        mouseY=parseInt(e.clientY-offsetY);
+
+        var dx=mouseX-startX;
+        var dy=mouseY-startY;
+
+        ScrollX=dx;
+        ScrollY=dy;
+        WebDoc.Draw();
     }
     if(isDragging){
         
@@ -331,11 +363,11 @@ function handleMouseMove(e){
     var dx=mouseX-startX;
     var dy=mouseY-startY;
     // move the selected shape by the drag distance
-    var selectedNode=Nodes[selectedShapeIndex];
+    var selectedNode=WebDoc.Nodes[selectedShapeIndex];
     selectedNode.x+=dx;
     selectedNode.y+=dy;
     // clear the canvas and redraw all shapes
-    draw();
+    WebDoc.Draw();
     // update the starting drag position (== the current mouse position)
     startX=mouseX;
     startY=mouseY;
@@ -353,14 +385,14 @@ function handleMouseMove(e){
         var dy=mouseY-startY;
         var nx = 0;
         var ny = 0;
-        var selectedNode=Nodes[selectedShapeIndex];
-        draw();
+        var selectedNode=WebDoc.Nodes[selectedShapeIndex];
+        WebDoc.Draw();
         if(selectedNode.selectedinputPin>-1)
         {
             nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
             ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
             selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
-            drawConnection(selectedNode.context,nx,ny,nx-50,ny,mouseX,mouseY);
+            drawConnection(selectedNode.context,nx+ScrollX,ny+ScrollY,nx-50+ScrollX,ny+ScrollY,mouseX,mouseY);
             
            
         }
@@ -369,14 +401,14 @@ function handleMouseMove(e){
             nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
             ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
             selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
-            drawConnection(selectedNode.context,nx,ny,nx+50,ny,mouseX,mouseY);
+            drawConnection(selectedNode.context,nx+ScrollX,ny+ScrollY,nx+50+ScrollX,ny+ScrollY,mouseX,mouseY);
             
            
         }
-        for(var i=0;i<Nodes.length;i++)
+        for(var i=0;i<WebDoc.Nodes.length;i++)
         {
 
-            if(isMouseInPin(startX,startY,Nodes[i]))
+            if(isMouseInPin(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
             {
                 
 
@@ -524,19 +556,19 @@ class WebNode {
         switch(this.t)
         {
             case 0:
-                this.g = redNodeGradient(this.context,this.x,this.y,this.w,this.h);
+                this.g = redNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
             break;
     
             case 1:
-                this.g = blueNodeGradient(this.context,this.x,this.y,this.w,this.h);
+                this.g = blueNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
             break;
     
             default:
-                this.g = redNodeGradient(this.context,this.x,this.y,this.w,this.h);
+                this.g = redNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
         }
-        roundRect(this.context,this.x, this.y, this.w, this.h, this.radius, this.g);
+        roundRect(this.context,this.x+ScrollX, this.y+ScrollY, this.w, this.h, this.radius, this.g);
         this.context.textAlign = 'left';
-        drawText(this.context,this.x+(this.radius-(this.fontsize/2)),this.y+(this.radius-(this.fontsize/2)),this.fontsize,this.name,'white');
+        drawText(this.context,this.x+(this.radius-(this.fontsize/2))+ScrollX,this.y+(this.radius-(this.fontsize/2))+ScrollY,this.fontsize,this.name,'white');
         this.drawPins(this.inputs,0);
         this.drawPins(this.outputs,1);
     }
@@ -548,7 +580,7 @@ class WebNode {
         {
             var con = pin.connections[index];
             this.context.strokeStyle = colortype(pin.t); 
-            drawConnection(this.context,this.x+pin.x,this.y+pin.y,this.x+pin.x+control,this.y+pin.y,((this.x+pin.x)+(con.B.parent.x+con.B.x))/2,((con.B.parent.y+con.B.y)+(this.y+pin.y))/2);
+            drawConnection(this.context,this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.x+pin.x+control+ScrollX,this.y+pin.y+ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+ScrollY);
         }
         
     }
@@ -560,7 +592,7 @@ class WebNode {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
                 this.context.beginPath();
-                this.context.arc(this.x+pin.x,this.y+pin.y,this.radius/3,0,360,0);
+                this.context.arc(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.radius/3,0,360,0);
                 if(this.selectedinputPin==index && isConnecting)
                 {
                     this.context.strokeStyle = colortype(pin.t); 
@@ -572,14 +604,14 @@ class WebNode {
                 this.context.stroke();
                 this.context.closePath();
                 this.context.textAlign = 'left';
-                drawText(this.context,this.x+pin.x+(this.radius/2),this.y+pin.y,this.fontsize*0.75,pin.name,'white');
+                drawText(this.context,this.x+pin.x+(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,-50);
             }
         } else {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
                 this.context.beginPath();
-                this.context.arc(this.x+pin.x,this.y+pin.y,this.radius/3,0,360,0);
+                this.context.arc(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.radius/3,0,360,0);
                 if(this.selectedoutputPin==index && isConnecting)
                 {
                     this.context.strokeStyle = colortype(pin.t); 
@@ -591,13 +623,55 @@ class WebNode {
                 this.context.stroke();     
                 this.context.closePath();
                 this.context.textAlign = 'right';
-                drawText(this.context,this.x+pin.x-(this.radius/2),this.y+pin.y,this.fontsize*0.75,pin.name,'white');
+                drawText(this.context,this.x+pin.x-(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,50);
            
             }
         }
-    }   
+    }
+    
 
+
+
+}
+
+class WebNodeDocument
+{
+    constructor(context,name)
+    {
+        this.context = context;
+        this.name = name;
+        this.Nodes=[];
+    }
+
+    Draw()
+    {
+        this.context.fillStyle = 'rgb(0, 0, 0)';
+        this.context.fillRect(0, 0, w, h);
+        this.context.textAlign = 'right';
+        
+        drawGrid(this.context,w,h);
+        drawText(this.context,w-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
+        for (let index = 0; index < this.Nodes.length; index++) {
+            this.Nodes[index].drawThisNode();
+            
+        }
+        this.DrawSideBar();
+        this.DrawMenuBar();
+    }
+
+    DrawSideBar()
+    {
+        this.context.fillStyle = 'DimGrey';
+        this.context.fillRect(0, 50, w/6, h);
+
+    }
+
+    DrawMenuBar()
+    {
+        this.context.fillStyle = 'DimGrey';
+        this.context.fillRect(0, 0, w, 50);       
+    }
 
 }
 

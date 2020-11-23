@@ -24,9 +24,9 @@
     switch($postaction)
     {
 
-        case "save-project":
-            $myfile = fopen("proj.txt", "w");           
-            $obj = json_decode($_POST["x"], false);
+        case "save-document":
+            $myfile = fopen($_POST["dir"], "w");           
+            $obj = json_decode($_POST["doc"], false);
             fwrite($myfile, json_encode($obj));
             exit();
         break;
