@@ -5,12 +5,15 @@ var isConnecting=false;
 var isScrolling=false;
 var startX,startY;
 var ctx;
-var WebDoc;
+
 var offsetX,offsetY;
 var ScrollX=0,ScrollY=0;
 var selectedShapeIndex;
 var selectedShapeConnectionIndex = -1;
 var pixelFontLoaded=false;
+
+var WebDoc;
+var WebNodeUI;
 
 function reOffset(){
     var c = document.getElementById('canvas');
@@ -21,7 +24,7 @@ function reOffset(){
     var BB=c.getBoundingClientRect();
     offsetX=BB.left;
     offsetY=BB.top; 
-    WebDoc.Draw();  
+    WebNodeUI.Draw();  
 }
 
 function Init()
@@ -35,7 +38,8 @@ function Init()
       ctx = canvas.getContext('2d');
       LoadMyFonts(ctx);
     }
-    WebDoc = new WebNodeDocument(ctx,"document");
+    WebNodeUI= new WebNodeGUI(canvas,ctx,w,h);
+    WebDoc = new WebNodeDocument(canvas,ctx,"document");
     canvas.onmousedown=handleMouseDown;
     canvas.onmousemove=handleMouseMove;
     canvas.onmouseup=handleMouseUp;
@@ -51,7 +55,7 @@ function Init()
     
 
     
-    let myNode = new WebNode(ctx,"Write Document",50,80,200,100,0);
+    let myNode = new WebNode(ctx,"Write Document",550,380,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddInput("Document Type",vartypes.STRING,0); 
     myNode.AddInput("Content",vartypes.STRING,0);
@@ -59,14 +63,14 @@ function Init()
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebDoc.Nodes.push( myNode );
     
-    myNode = new WebNode(ctx,"Doctype Javascript",350,80,200,100,1);
+    myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
     //myNode.AddInput("Float",vartypes.FLOAT,0);
     //myNode.AddInput("Int",vartypes.INT,0);
     //myNode.AddInput("string",vartypes.STRING,0);
     myNode.AddOutput("string",vartypes.STRING,0); 
     //var saveit = JSON.stringify(myNode);
     WebDoc.Nodes.push( myNode );
-    myNode = new WebNode(ctx,"Create Vector",250,120,200,100,1);
+    myNode = new WebNode(ctx,"Create Vector",250,420,200,100,1);
     myNode.AddInput("INPUT X",vartypes.FLOAT,0);
     myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
 
@@ -74,19 +78,19 @@ function Init()
 
     WebDoc.Nodes.push( myNode );
 
-    myNode = new WebNode(ctx,"Set Some Vector2",350,80,200,100,0);
+    myNode = new WebNode(ctx,"Set Some Vector2",350,580,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddOutput("",vartypes.FLOW,0);   
     myNode.AddInput("Vector2",vartypes.VECTOR2,0);
     WebDoc.Nodes.push( myNode );
 
-    myNode = new WebNode(ctx,"GET X",350,280,200,100,1);
+    myNode = new WebNode(ctx,"GET X",750,780,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebDoc.Nodes.push( myNode );
-    myNode = new WebNode(ctx,"GET Y",350,180,200,100,1);
+    myNode = new WebNode(ctx,"GET Y",650,680,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebDoc.Nodes.push( myNode );
-    WebDoc.Draw();
+    WebNodeUI.Draw();
     //var saveit = JSON.stringify(WebDoc);
     //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
       /*
@@ -95,148 +99,6 @@ function Init()
     });
     */
 
-}
-/*
-function draw() {
-    
-    ctx.fillStyle = 'rgb(0, 0, 0)';
-    ctx.fillRect(0, 0, w, h);
-
-    drawGrid(ctx,w,h);
-    for (let index = 0; index < WebDoc.Nodes.length; index++) {
-        WebDoc.Nodes[index].drawThisNode();
-        
-    }
-    //drawNode(ctx,50,80,200,100,0);
-
-    //drawNode(ctx,350,80,200,100,1);
-    
-  }
-*/
-function drawGrid(context,w,h) {
-    // Box width
-    var bw = w;
-    // Box height
-    var bh = h;
-    // Padding
-    var p = 0;
-
-    for (var x = 0; x <= bw; x += 40) {
-        context.moveTo(0.5 + x + p, p);
-        context.lineTo(0.5 + x + p, bh + p);
-    }
-
-    for (var x = 0; x <= bh; x += 40) {
-        context.moveTo(p, 0.5 + x + p);
-        context.lineTo(bw + p, 0.5 + x + p);
-    }
-    context.strokeStyle = 'rgba(50, 50, 50, 0.5)';
-    context.stroke();
-}
-
-function blueNodeGradient(ctx,x,y,w,h)
-{
-    blueNode = ctx.createLinearGradient(x+(w/2), y, x+(w/2), y+h);
-    blueNode.addColorStop(0, 'blue');
-    blueNode.addColorStop(.65, 'darkblue');
-    blueNode.addColorStop(1, 'black');
-    return blueNode;
-}
-
-function redNodeGradient(ctx,x,y,w,h)
-{
-    redNode = ctx.createLinearGradient(x+(w/2), y, x+(w/2), y+h);
-    redNode.addColorStop(0, 'red');
-    redNode.addColorStop(.65, 'darkred');
-    redNode.addColorStop(1, 'black');
-    return redNode;
-}
-
-function drawIcon(context,x,y,size,character,color)
-{
-    context.font = `${size}px Font Awesome 5 Free`;
-    context.fillStyle = color;
-    ctx.fillText(character,x,y);
-}
-
-function drawText(context,x,y,size,text,color)
-{
-    context.font = `${size}px Roboto`;
-    context.fillStyle = color;
-    ctx.fillText(text,x,y);
-}
-
-function drawNode(context,name,x,y,w,h,t)
-{
-    var radius = 20;
-    var fontsize =12;
-    var g;
-    switch(t)
-    {
-        case 0:
-            g = redNodeGradient(ctx,x,y,w,h);
-        break;
-
-        case 1:
-            g = blueNodeGradient(ctx,x,y,w,h);
-        break;
-
-        default:
-            g = redNodeGradient(ctx,x,y,w,h);
-    }
-    roundRect(context,x, y, w, h, radius, g);
-    drawText(context,x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,name,'white');
-}
-
-function drawConnection(context,startx,starty,ax,ay,bx,by)
-{
-    context.beginPath();
-    context.lineWidth="4";
-    context.moveTo(startx, starty);
-    context.quadraticCurveTo(ax,ay,bx,by);
-    context.stroke();
-    context.closePath();
-}
-
-function roundRect(context,x, y, w, h, radius, gradient)
-{
-  var r = x + w;
-  var b = y + h;
-  context.beginPath();
-  context.strokeStyle="white";
-  context.lineWidth="4";
-  context.moveTo(x+radius, y);
-  context.lineTo(r-radius, y);
-  context.quadraticCurveTo(r, y, r, y+radius);
-  context.lineTo(r, y+h-radius);
-  context.quadraticCurveTo(r, b, r-radius, b);
-  context.lineTo(x+radius, b);
-  context.quadraticCurveTo(x, b, x, b-radius);
-  context.lineTo(x, y+radius);
-  context.quadraticCurveTo(x, y, x+radius, y);
-  context.stroke();
-  context.fillStyle=gradient;
-  context.fill();
-  context.closePath();
-
-  var greyGradient = ctx.createLinearGradient(x+(w/2), y, x+(w/2), b);
-  greyGradient.addColorStop(0, 'DarkGray');
-  greyGradient.addColorStop(.15, 'DimGray');
-  greyGradient.addColorStop(0.35, 'black');
-
-
-  context.beginPath();
-  context.moveTo(x, y+radius);
-  context.lineTo(r, y+radius);
-  context.lineTo(r, y+h-radius);
-  context.quadraticCurveTo(r, b, r-radius, b);
-  context.lineTo(x+radius, b);
-  context.quadraticCurveTo(x, b, x, b-radius);
-  context.lineTo(x, y+radius);
-  //context.quadraticCurveTo(x, y, x+radius, y);
-  context.fillStyle=greyGradient;
-  context.fill();
-  context.closePath();
 }
 
 function handleMouseDown(e){
@@ -270,7 +132,7 @@ function handleMouseDown(e){
                 }
                 
                 //refresh
-                WebDoc.Draw();
+                WebNodeUI.Draw();
                 return;
             }
         }
@@ -329,7 +191,7 @@ function handleMouseUp(e){
     }
 
     isConnecting=false;
-    WebDoc.Draw();
+    WebNodeUI.Draw();
 }
 
 function handleMouseOut(e){
@@ -342,7 +204,7 @@ function handleMouseOut(e){
     isDragging=false;
     isConnecting=false;
     isScrolling=false;
-    WebDoc.Draw();
+    WebNodeUI.Draw();
 }
 
 function handleMouseMove(e){
@@ -364,7 +226,7 @@ function handleMouseMove(e){
 
         ScrollX=dx;
         ScrollY=dy;
-        WebDoc.Draw();
+        WebNodeUI.Draw();
     }
     if(isDragging){
         
@@ -382,7 +244,7 @@ function handleMouseMove(e){
     selectedNode.x+=dx;
     selectedNode.y+=dy;
     // clear the canvas and redraw all shapes
-    WebDoc.Draw();
+    WebNodeUI.Draw();
     // update the starting drag position (== the current mouse position)
     startX=mouseX;
     startY=mouseY;
@@ -401,13 +263,13 @@ function handleMouseMove(e){
         var nx = 0;
         var ny = 0;
         var selectedNode=WebDoc.Nodes[selectedShapeIndex];
-        WebDoc.Draw();
+        WebNodeUI.Draw();
         if(selectedNode.selectedinputPin>-1)
         {
             nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
             ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
             selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
-            drawConnection(selectedNode.context,nx+ScrollX,ny+ScrollY,nx-50+ScrollX,ny+ScrollY,mouseX,mouseY);
+            WebNodeUI.DrawConnection(nx+ScrollX,ny+ScrollY,nx-50+ScrollX,ny+ScrollY,mouseX,mouseY);
             
            
         }
@@ -416,7 +278,7 @@ function handleMouseMove(e){
             nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
             ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
             selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
-            drawConnection(selectedNode.context,nx+ScrollX,ny+ScrollY,nx+50+ScrollX,ny+ScrollY,mouseX,mouseY);
+            WebNodeUI.DrawConnection(nx+ScrollX,ny+ScrollY,nx+50+ScrollX,ny+ScrollY,mouseX,mouseY);
             
            
         }
@@ -522,7 +384,7 @@ class WebNode {
         this.outputs=[];
         this.radius = 20;
         this.fontsize = 12;
-        this.g = redNodeGradient(context,x,y,w,h);
+        this.g = WebNodeUI.GetNodeGradient(x,y,w,h,t);
         this.selectedinputPin = -1;
         this.selectedoutputPin = -1;
     }
@@ -567,23 +429,8 @@ class WebNode {
 
     drawThisNode()
     {
-
-        switch(this.t)
-        {
-            case 0:
-                this.g = redNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
-            break;
-    
-            case 1:
-                this.g = blueNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
-            break;
-    
-            default:
-                this.g = redNodeGradient(this.context,this.x+ScrollX,this.y+ScrollY,this.w,this.h);
-        }
-        roundRect(this.context,this.x+ScrollX, this.y+ScrollY, this.w, this.h, this.radius, this.g);
-        this.context.textAlign = 'left';
-        drawText(this.context,this.x+(this.radius-(this.fontsize/2))+ScrollX,this.y+(this.radius-(this.fontsize/2))+ScrollY,this.fontsize,this.name,'white');
+        
+        WebNodeUI.DrawNode(this.name,this.x+ScrollX, this.y+ScrollY, this.w, this.h,this.t);
         this.drawPins(this.inputs,0);
         this.drawPins(this.outputs,1);
     }
@@ -595,7 +442,7 @@ class WebNode {
         {
             var con = pin.connections[index];
             this.context.strokeStyle = colortype(pin.t); 
-            drawConnection(this.context,this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.x+pin.x+control+ScrollX,this.y+pin.y+ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+ScrollY);
+            WebNodeUI.DrawConnection(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.x+pin.x+control+ScrollX,this.y+pin.y+ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+ScrollY);
         }
         
     }
@@ -619,7 +466,7 @@ class WebNode {
                 this.context.stroke();
                 this.context.closePath();
                 this.context.textAlign = 'left';
-                drawText(this.context,this.x+pin.x+(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
+                WebNodeUI.DrawText(this.x+pin.x+(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,-50);
             }
         } else {
@@ -638,22 +485,20 @@ class WebNode {
                 this.context.stroke();     
                 this.context.closePath();
                 this.context.textAlign = 'right';
-                drawText(this.context,this.x+pin.x-(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
+                WebNodeUI.DrawText(this.context,this.x+pin.x-(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,50);
            
             }
         }
     }
     
-
-
-
 }
 
 class WebNodeDocument
 {
-    constructor(context,name)
+    constructor(canvas,context,name)
     {
+        this.canvas = canvas;
         this.context = context;
         this.name = name;
         this.Nodes=[];
@@ -661,19 +506,197 @@ class WebNodeDocument
 
     Draw()
     {
-        this.context.fillStyle = 'rgb(0, 0, 0)';
-        this.context.fillRect(0, 0, w, h);
-        this.context.textAlign = 'right';
-        
-        drawGrid(this.context,w,h);
-        drawText(this.context,w-(w/6)-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
+        WebNodeUI.DrawText(w-(w/6)-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
         for (let index = 0; index < this.Nodes.length; index++) {
             this.Nodes[index].drawThisNode();
             
         }
+    }
+}
+
+class WebNodeGuiButton
+{
+    constructor(icon,label,x,y,w,h)
+    {
+        this.icon = icon;
+        this.label = label;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+
+    Draw()
+    {
+        WebNodeUI.context.strokeStyle = 'Black';
+        WebNodeUI.context.lineWidth = 2;
+        WebNodeUI.context.fillStyle = 'Gray';
+        WebNodeUI.context.fillRect(this.x, this.y, this.w, this.h); 
+        //New      
+        WebNodeUI.DrawIcon(this.x+((this.w/2)-15),this.y+((this.w/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+        WebNodeUI.context.textAlign = 'center';
+        WebNodeUI.context.shadowBlur = 2;
+        WebNodeUI.context.shadowColor = 'Black';
+        WebNodeUI.DrawText(this.x+(this.w/2),this.y+this.h-8,16,this.label,'white');
+    }
+}
+
+class WebNodeGUI
+{
+    constructor(canvas,context,width,height)
+    {
+        this.isDragging=false;
+        this.isConnecting=false;
+        this.isScrolling=false;
+        this.startX = 0;
+        this.startY = 0;
+        this.canvas = canvas;
+        this.context = context;
+        this.WebDoc;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.ScrollX=0;
+        this.ScrollY=0;
+        this.selectedShapeIndex = -1;
+        this.selectedShapeConnectionIndex = -1;
+        this.pixelFontLoaded=false;
+        this.w = width;
+        this.h = height;
+        this.NewButton = new WebNodeGuiButton(61200,'New',20,5,80,80);
+        this.SaveButton = new WebNodeGuiButton(61189,'Save',120,5,80,80);
+        this.LoadButton = new WebNodeGuiButton(61216,'Load',220,5,80,80);
+        this.CompileButton = new WebNodeGuiButton(61409,'Compile',320,5,80,80);
+    }
+
+    Draw()
+    {
+        this.context.shadowBlur = 2;
+        this.context.shadowColor = 'Black';
+        this.context.fillStyle = 'rgb(0, 0, 0)';
+        this.context.fillRect(0, 0, w, h);
+        this.context.textAlign = 'right';
+        this.DrawGrid();
+        WebDoc.Draw();
         this.DrawLeftSideBar();
         this.DrawRightSideBar();
         this.DrawMenuBar();
+    }
+
+    DrawGrid() {
+        // Box width
+        var bw = w;
+        // Box height
+        var bh = h;
+        // Padding
+        var p = 0;
+    
+        for (var x = 0; x <= bw; x += 40) {
+            this.context.moveTo(0.5 + x + p, p);
+            this.context.lineTo(0.5 + x + p, bh + p);
+        }
+    
+        for (var x = 0; x <= bh; x += 40) {
+            this.context.moveTo(p, 0.5 + x + p);
+            this.context.lineTo(bw + p, 0.5 + x + p);
+        }
+        this.context.strokeStyle = 'rgba(50, 50, 50, 0.5)';
+        this.context.stroke();
+    }
+
+    NodeGradient(x,y,w,h,colors)
+    {
+        var nodegrad = this.context.createLinearGradient(x+(w/2), y, x+(w/2), y+h);
+        nodegrad.addColorStop(0, colors[0]);
+        nodegrad.addColorStop(.65, colors[1]);
+        nodegrad.addColorStop(1, colors[2]);
+        return nodegrad;
+    }
+
+    DrawText(x,y,size,text,color)
+    {
+        this.context.font = `${size}px Roboto`;
+        this.context.fillStyle = color;
+        this.context.fillText(text,x,y);
+    }
+
+    RoundRect(x, y, w, h, radius, gradient)
+    {
+      var r = x + w;
+      var b = y + h;
+      this.context.beginPath();
+      this.context.strokeStyle="white";
+      this.context.lineWidth="4";
+      this.context.moveTo(x+radius, y);
+      this.context.lineTo(r-radius, y);
+      this.context.quadraticCurveTo(r, y, r, y+radius);
+      this.context.lineTo(r, y+h-radius);
+      this.context.quadraticCurveTo(r, b, r-radius, b);
+      this.context.lineTo(x+radius, b);
+      this.context.quadraticCurveTo(x, b, x, b-radius);
+      this.context.lineTo(x, y+radius);
+      this.context.quadraticCurveTo(x, y, x+radius, y);
+      this.context.stroke();
+      this.context.fillStyle=gradient;
+      this.context.fill();
+      this.context.closePath();   
+      var greyGradient = this.context.createLinearGradient(x+(w/2), y, x+(w/2), b);
+      greyGradient.addColorStop(0, 'DarkGray');
+      greyGradient.addColorStop(.15, 'DimGray');
+      greyGradient.addColorStop(0.35, 'black');  
+      this.context.beginPath();
+      this.context.moveTo(x, y+radius);
+      this.context.lineTo(r, y+radius);
+      this.context.lineTo(r, y+h-radius);
+      this.context.quadraticCurveTo(r, b, r-radius, b);
+      this.context.lineTo(x+radius, b);
+      this.context.quadraticCurveTo(x, b, x, b-radius);
+      this.context.lineTo(x, y+radius);
+      this.context.fillStyle=greyGradient;
+      this.context.fill();
+      this.context.closePath();
+    }
+
+    DrawConnection(startx,starty,ax,ay,bx,by)
+    {
+        this.context.beginPath();
+        this.context.lineWidth="4";
+        this.context.moveTo(startx, starty);
+        this.context.quadraticCurveTo(ax,ay,bx,by);
+        this.context.stroke();
+        this.context.closePath();
+    }
+
+    GetNodeGradient(x,y,w,h,t)
+    {
+        var g;
+        switch(t)
+        {
+            case 0:
+                var colors = ['red','darkred','black'];
+                g = this.NodeGradient(x,y,w,h,colors);
+            break;
+
+            case 1:
+                var colors = ['blue','darkblue','black'];
+                g = this.NodeGradient(x,y,w,h,colors);
+            break;
+
+            default:
+                var colors = ['darkgrey','dimgrey','black'];
+                g = this.NodeGradient(x,y,w,h,colors);
+        }   
+        return(g);
+    }
+
+    DrawNode(name,x,y,w,h,t)
+    {
+        var radius = 20;
+        var fontsize =12;
+        var g = this.GetNodeGradient(x,y,w,h,t);    
+        this.RoundRect(x, y, w, h, radius, g);
+        this.context.textAlign = 'left';
+        this.DrawText(x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,name,'white');
+
     }
 
     DrawLeftSideBar()
@@ -691,12 +714,44 @@ class WebNodeDocument
     DrawMenuBar()
     {
         this.context.fillStyle = 'DimGrey';
-        this.context.fillRect(0, 0, w, 50);       
-
-        drawIcon(this.context,60,20,80,String.fromCharCode(0xF001),'white');
-
+        this.context.fillRect(0, 0, w, 90); 
+        this.NewButton.Draw();
+        this.SaveButton.Draw();
+        this.LoadButton.Draw();
+        this.CompileButton.Draw();
+        /*
+        //New      
+        this.DrawIcon(20,5,'Webapp',1,30,String.fromCharCode(61200),'#FFFFFF');
+        this.context.textAlign = 'center';
+        this.DrawText(35,50,16,'New','white');
+        //Save
+        this.DrawIcon(70,5,'Webapp',1,30,String.fromCharCode(61189),'#FFFFFF');
+        this.context.textAlign = 'center';
+        this.DrawText(85,50,16,'Save','white');
+        //Open
+        this.DrawIcon(120,5,'Webapp',1,30,String.fromCharCode(61216),'#FFFFFF');
+        this.context.textAlign = 'center';
+        this.DrawText(135,50,16,'Load','white');
+        */
     }
 
+    DrawIcon(xx,yy,bfont,bscale,bwidth,character,tint)
+    {
+        if(pixelFontLoaded)
+        {
+            PixelFontCanvas.drawText(this.canvas,character,{
+
+                font: bfont,
+                x: xx,
+                y: yy,
+                scale: bscale,
+                width: bwidth,
+                align: 'center',
+                tint: tint
+
+            });
+        }
+    }
 }
 
 function LoadMyFonts(context)
@@ -712,29 +767,13 @@ function LoadMyFonts(context)
         context.font = '50px "Roboto"';
         context.textBaseline = 'middle';
         context.fillText('Hello!', 20, 10);
-        WebDoc.Draw();
+        WebNodeUI.Draw();
     };
-/*
-    var blink = document.createElement('link');
-    blink.rel = 'stylesheet';
-    //blink.type = 'text/css';
-    blink.href = 'all.css';
-    document.getElementsByTagName('head')[0].appendChild(blink);
-    var bimage = new Image;
-    bimage.src = blink.href;
-    bimage.onerror = function() {
-        context.font = '50px "Font Awesome 5 Free Solid"';
-        context.textBaseline = 'middle';
-        context.fillText('Hello!', 20, 10);
-        WebDoc.Draw();
-    };
-    */
 }
 
 function LoadPixelFont(e)
 {
-    PixelFontCanvas.loadFont('BMFont/', 'FontAwesome.txt', (data) => { pixelFontLoaded=true; });
-
+    PixelFontCanvas.loadFont('BMFont/', 'Webapp.fnt', (data) => { pixelFontLoaded=true; WebDoc.Draw(); });
 
 }
 

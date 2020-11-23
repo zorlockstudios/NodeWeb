@@ -113,8 +113,12 @@ class PixelFontCanvas {
                 continue;
             }
 
-            const charData = data.chars[charCode];
-
+            var charData 
+            try {
+            charData= data.chars[charCode];
+            }catch(err) {
+                console.log(err.message);
+            }
             if (!charData)
             {
                 continue;
@@ -176,12 +180,16 @@ class PixelFontCanvas {
 
         let drawData = {};
         drawData.textWidth = maxLineWidth * scale;
-        drawData.textHeight = (pos.y + data.lineHeight) * scale;
         drawData.texture = data.texture;
         drawData.font = style.font;
         drawData.tint = style.tint;
         drawData.alpha = style.alpha;
-
+        try{
+            drawData.textHeight = (pos.y + data.lineHeight) * scale;
+        }catch(err) {
+            drawData.textHeight = (pos.y + 10) * scale;
+        }
+        
         for (let i = 0; i < lenChars; i++)
         {
             _glyphs[i].position.x += style.x;
