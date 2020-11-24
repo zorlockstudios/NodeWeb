@@ -1,6 +1,6 @@
 var pixelFontLoaded=false;
 var pixelDirFontLoaded=false;
-var WebDoc;
+//var WebDoc;
 var WebNodeUI;
 
 function reOffset(){
@@ -30,8 +30,9 @@ function Init()
       LoadMyFonts(ctx);
     }
     WebNodeUI= new WebNodeGUI(canvas,ctx,w,h);
-    WebDoc = new WebNodeDocument(canvas,ctx,"document");
+    WebNodeUI.MainDoc = new WebNodeDocument(canvas,ctx,"document");
     WebNodeUI.Init();
+
     canvas.onmousedown=WebNodeUI.HandleMouseDown;
     canvas.onmousemove=WebNodeUI.HandleMouseMove;
     canvas.onmouseup=WebNodeUI.HandleMouseUp;
@@ -53,7 +54,7 @@ function Init()
     myNode.AddInput("Content",vartypes.STRING,0);
     //myNode.AddOutput("",vartypes.FLOW,0);
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
     
     myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
     //myNode.AddInput("Float",vartypes.FLOAT,0);
@@ -61,27 +62,27 @@ function Init()
     //myNode.AddInput("string",vartypes.STRING,0);
     myNode.AddOutput("string",vartypes.STRING,0); 
     //var saveit = JSON.stringify(myNode);
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
     myNode = new WebNode(ctx,"Create Vector",250,420,200,100,1);
     myNode.AddInput("INPUT X",vartypes.FLOAT,0);
     myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
 
     myNode.AddOutput("Vector 2",vartypes.VECTOR2,0); 
 
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
 
     myNode = new WebNode(ctx,"Set Some Vector2",350,580,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddOutput("",vartypes.FLOW,0);   
     myNode.AddInput("Vector2",vartypes.VECTOR2,0);
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
 
     myNode = new WebNode(ctx,"GET X",750,780,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
     myNode = new WebNode(ctx,"GET Y",650,680,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebDoc.Nodes.push( myNode );
+    WebNodeUI.MainDoc.Nodes.push( myNode );
     WebNodeUI.Draw();
     //var saveit = JSON.stringify(WebDoc);
     //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
@@ -118,6 +119,7 @@ class WebVar {
         this.y = 0;
         this.connections=[];
         this.parent = parent;
+        this.val;
     }
 
     toJSON()
@@ -298,6 +300,8 @@ class WebNodeDocument
         this.context = context;
         this.name = name;
         this.Nodes=[];
+        this.Functions=[];
+        this.Variabes=[];
     }
 
     Draw()
@@ -308,20 +312,41 @@ class WebNodeDocument
             
         }
     }
+
+    AddNewFunction()
+    {   
+        var nf = new WebNodeFunction(this.canvas,this.context,'New Func');
+        WebNodeUI.CurrentDoc = nf;
+        WebNodeUI.FunctionList.AddItem(61167,nf.name,nf);
+        this.Functions.push(nf);
+    }
+
 }
 
-class WebNodeGuiButton
+
+class WebNodeFunction extends WebNodeDocument
 {
-    constructor(icon,label,x,y,w,h)
+    constructor(canvas,context,name)
+    {       
+        super(canvas,context,name);
+
+    }
+
+}
+
+class WebNodeGuiWidget
+{
+    constructor(x,y,w,h)
     {
-        this.icon = icon;
-        this.label = label;
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
         this.hovering=false;
-    }
+        this.obj;
+        this.fontsize=16;
+        this.delegate = function() {};
+    }   
 
     Draw()
     {
@@ -334,21 +359,146 @@ class WebNodeGuiButton
             WebNodeUI.context.fillStyle = 'Gray';
         }
         WebNodeUI.context.fillRect(this.x, this.y, this.w, this.h); 
-        //New      
-        WebNodeUI.DrawIcon(this.x+((this.w/2)-15),this.y+((this.w/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
-        WebNodeUI.context.textAlign = 'center';
-        WebNodeUI.context.shadowBlur = 2;
-        WebNodeUI.context.shadowColor = 'Black';
-        WebNodeUI.DrawText(this.x+(this.w/2),this.y+this.h-8,16,this.label,'white');
     }
 
     MouseOver(mx,my)
     {
         if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.h){
+            this.hovering = true;
             return(true);
         } else {
+            this.hovering = false;
             return(false);
         }  
+    }
+}
+
+class WebNodeGuiButton extends WebNodeGuiWidget
+{
+    constructor(icon,label,x,y,w,h)
+    {
+        super(x,y,w,h);
+        this.icon = icon;
+        this.label = label;  
+        this.align = 'center';     
+    }
+
+    Draw()
+    {
+        super.Draw();
+        //New     
+        if(this.align=='center')
+        { 
+            WebNodeUI.DrawIcon(this.x+((this.w/2)-15),this.y+((this.h/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+            WebNodeUI.context.textAlign = 'center';
+            WebNodeUI.context.shadowBlur = 2;
+            WebNodeUI.context.shadowColor = 'Black';
+            WebNodeUI.DrawText(this.x+(this.w/2),this.y+this.h-(this.fontsize/2),this.fontsize,this.label,'white');
+        } else if(this.align=='left')
+        {
+            WebNodeUI.DrawIcon(this.x+15,this.y+((this.h/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+            WebNodeUI.context.textAlign = 'left';
+            WebNodeUI.context.shadowBlur = 2;
+            WebNodeUI.context.shadowColor = 'Black';
+            WebNodeUI.DrawText(this.x+50,this.y+this.fontsize+(this.fontsize/2),this.fontsize,this.label,'white');            
+        } else if(this.align=='right')
+        {
+            WebNodeUI.DrawIcon(this.x+this.w-15,this.y+((this.h/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+            WebNodeUI.context.textAlign = 'right';
+            WebNodeUI.context.shadowBlur = 2;
+            WebNodeUI.context.shadowColor = 'Black';
+            WebNodeUI.DrawText(this.x+this.w-50,this.y+this.fontsize+(this.fontsize/2),this.fontsize,this.label,'white');            
+        }
+    }
+}
+
+class WebNodeGuiListItem extends WebNodeGuiWidget
+{
+    constructor(icon,label,x,y,w,h)
+    {
+        super(x,y,w,h);
+        this.icon = icon;
+        this.label = label;       
+    }
+
+    Draw()
+    {
+
+        WebNodeUI.context.strokeStyle = 'Black';
+        WebNodeUI.context.lineWidth = 2;
+        if(this.hovering)
+        {
+            WebNodeUI.context.fillStyle = 'GoldenRod';
+        } else {
+            WebNodeUI.context.fillStyle = 'Gray';
+        }
+        WebNodeUI.context.fillRect(this.x, this.y, this.w, 40); 
+
+        WebNodeUI.DrawIcon(this.x+15,this.y+5,'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+        WebNodeUI.context.textAlign = 'left';
+        WebNodeUI.context.shadowBlur = 2;
+        WebNodeUI.context.shadowColor = 'Black';
+        WebNodeUI.DrawText(this.x+50,this.y+this.fontsize+(this.fontsize/2),this.fontsize,this.label,'white');
+    }
+
+
+}
+
+class WebNodeGuiListView extends WebNodeGuiWidget
+{
+    constructor(icon,label,x,y,w,h)
+    {
+        super(x,y,w,h);
+        this.icon = icon;
+        this.label = label;
+        this.container = [];
+        this.hoveringElement;
+    }
+    
+    AddItem(icon,label,itm)
+    {
+        var newitem = new WebNodeGuiListItem(icon,label,0,0,100,40);
+        newitem.obj = itm;
+        this.container.push(newitem);
+
+    }
+
+    MouseOver(mx,my)
+    {
+        for (let index = 0; index < this.container.length; index++) {
+            var e = this.container[index];
+            if(e.MouseOver(mx,my))
+            {
+                this.hoveringElement = e;
+                return(true);
+            }
+        }
+    }
+
+    Draw()
+    {
+        WebNodeUI.context.strokeStyle = 'Black';
+        WebNodeUI.context.lineWidth = 2;
+        WebNodeUI.context.fillStyle = 'Gray';
+        WebNodeUI.context.fillRect(this.x, this.y, this.w, this.h); 
+        WebNodeUI.context.fillRect(this.x, this.y, this.w, 40); 
+
+        WebNodeUI.DrawIcon(this.x+15,this.y+5,'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+        WebNodeUI.context.textAlign = 'left';
+        WebNodeUI.context.shadowBlur = 2;
+        WebNodeUI.context.shadowColor = 'Black';
+        WebNodeUI.DrawText(this.x+50,this.y+this.fontsize+(this.fontsize/2),this.fontsize,this.label,'white');
+
+        for (let index = 0; index < this.container.length; index++) {
+            var e = this.container[index];
+            e.w = this.w-10;
+            e.h = 40;
+            e.x = this.x+5;
+            e.y = this.y+50+(40*index);
+            e.Draw();
+        }
+
+
     }
 }
 
@@ -365,7 +515,6 @@ class WebNodeGUI
         this.startY = 0;
         this.canvas = canvas;
         this.context = context;
-        this.WebDoc;
         this.offsetX = 0;
         this.offsetY = 0;
         this.ScrollX=0;
@@ -375,7 +524,16 @@ class WebNodeGUI
         this.pixelFontLoaded=false;
         this.w = width;
         this.h = height;
-        this.MenuButtons = []
+        this.MenuButtons = [];
+        this.GraphList;
+        this.FunctionList;
+        this.VariableList;
+        this.NewFunction;
+        this.NewVariable;
+        this.LeftBarButtons = [];
+        this.CurrentDoc;
+        this.MainDoc;
+
     }
 
     Init()
@@ -385,7 +543,21 @@ class WebNodeGUI
         this.MenuButtons.push(new WebNodeGuiButton(61237,'Load',220,5,80,80));
         this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',320,5,80,80));
         this.MenuButtons.push(new WebNodeGuiButton(61401,'Launch',420,5,80,80));
+        this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
+        this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc);
+        this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
+        this.VariableList = new WebNodeGuiListView(61301,'Variables',5,560,100,300);
+        this.NewFunction = new WebNodeGuiButton(61378,'New',35,240,60,40);
+        this.NewFunction.align = "left";
+        this.NewFunction.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
 
+        this.NewVariable = new WebNodeGuiButton(61378,'New',35,560,60,40);
+        this.NewVariable.align = "left";
+        //this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
+
+        this.CurrentDoc = this.MainDoc;
+        //this.LeftBarButtons.push(button);
+        //this.LeftBarButtons.push();
     }
 
     Draw()
@@ -396,7 +568,7 @@ class WebNodeGUI
         this.context.fillRect(0, 0, w, h);
         this.context.textAlign = 'right';
         this.DrawGrid();
-        WebDoc.Draw();
+        this.CurrentDoc.Draw();
         this.DrawLeftSideBar();
         this.DrawRightSideBar();
         this.DrawMenuBar();
@@ -521,20 +693,42 @@ class WebNodeGUI
 
     DrawLeftSideBar()
     {
-        this.context.fillStyle = 'DimGrey';
-        this.context.fillRect(0, 50, w/6, h);
+        WebNodeUI.context.fillStyle = 'DimGrey';
+        WebNodeUI.context.fillRect(0, 50, w/6, h);
+               
+        WebNodeUI.GraphList.w = (w/6)-10;
+        WebNodeUI.GraphList.Draw();
+  
+        WebNodeUI.FunctionList.w = (w/6)-10;
+        WebNodeUI.FunctionList.Draw();
+        
+        WebNodeUI.VariableList.w = (w/6)-10;
+        WebNodeUI.VariableList.Draw();
+
+        WebNodeUI.NewFunction.w = WebNodeUI.FunctionList.w/3;
+        WebNodeUI.NewFunction.x = (WebNodeUI.FunctionList.x+WebNodeUI.FunctionList.w)-(WebNodeUI.FunctionList.w/3)-5;
+        WebNodeUI.NewFunction.Draw();
+
+        WebNodeUI.NewVariable.w = WebNodeUI.VariableList.w/3;
+        WebNodeUI.NewVariable.x = (WebNodeUI.VariableList.x+WebNodeUI.VariableList.w)-(WebNodeUI.VariableList.w/3)-5;
+        WebNodeUI.NewVariable.Draw();
+
+        for (let index = 0; index < WebNodeUI.LeftBarButtons.length; index++) {
+            var p = WebNodeUI.LeftBarButtons[index];
+            p.Draw();
+        }
 
     }
     DrawRightSideBar()
     {
-        this.context.fillStyle = 'DimGrey';
-        this.context.fillRect(w-(w/6), 50, w/6, h);
+        WebNodeUI.context.fillStyle = 'DimGrey';
+        WebNodeUI.context.fillRect(w-(w/6), 50, w/6, h);
     }
 
     DrawMenuBar()
     {
-        this.context.fillStyle = 'DimGrey';
-        this.context.fillRect(0, 0, w, 90); 
+        WebNodeUI.context.fillStyle = 'DimGrey';
+        WebNodeUI.context.fillRect(0, 0, w, 90); 
         for (let index = 0; index < WebNodeUI.MenuButtons.length; index++) {
             var p = WebNodeUI.MenuButtons[index];
             p.Draw();
@@ -569,8 +763,8 @@ class WebNodeGUI
             WebNodeUI.startY=parseInt(e.clientY-WebNodeUI.offsetY); 
             if(!WebNodeUI.isHoveringUI)
             {
-                for(var i=0;i<WebDoc.Nodes.length;i++){
-                    if(WebDoc.Nodes[i].MouseOver(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                for(var i=0;i<WebNodeUI.CurrentDoc.Nodes.length;i++){
+                    if(WebNodeUI.CurrentDoc.Nodes[i].MouseOver(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
                     {
                         WebNodeUI.selectedShapeIndex=i;
                         // set the isDragging flag
@@ -579,7 +773,7 @@ class WebNodeGUI
                         //     further shapes under the mouse)
                         return;
                     }
-                    if(WebDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                    if(WebNodeUI.CurrentDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
                     {
                         
                         if(!WebNodeUI.isConnecting)
@@ -608,7 +802,16 @@ class WebNodeGUI
 
     HandleMouseUp(e){
         // return if we're not dragging
-        if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling){return;}
+        if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling){
+            if(WebNodeUI.isHoveringUI)
+            {
+                if(WebNodeUI.hoveringElement!=null)
+                {
+                    WebNodeUI.hoveringElement.delegate();
+                }
+            }
+            return;
+        }
         // tell the browser we're handling this event
         e.preventDefault();
         e.stopPropagation();
@@ -618,12 +821,12 @@ class WebNodeGUI
         if(WebNodeUI.isConnecting)
         {
             //create the connection if it exists. 
-            var node = WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+            var node = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex];
             if(node.selectedinputPin>-1)
             {
                 if(WebNodeUI.selectedShapeConnectionIndex>-1)
                 {
-                    var selnode = WebDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
+                    var selnode = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
                     if(selnode.selectedoutputPin>-1 && WebNodeUI.selectedShapeConnectionIndex!=WebNodeUI.selectedShapeIndex)
                     {
                         if(node.inputs[node.selectedinputPin].t==selnode.outputs[selnode.selectedoutputPin].t)
@@ -638,7 +841,7 @@ class WebNodeGUI
             {
                 if(WebNodeUI.selectedShapeConnectionIndex>-1)
                 {
-                    var selnode = WebDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
+                    var selnode = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
                     if(selnode.selectedinputPin>-1 && WebNodeUI.selectedShapeConnectionIndex!=WebNodeUI.selectedShapeIndex)
                     {
                         if(node.outputs[node.selectedoutputPin].t==selnode.inputs[selnode.selectedinputPin].t)
@@ -660,7 +863,6 @@ class WebNodeGUI
     {
         // return if we're not dragging
         if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling){
-            
             return;
         }
         // tell the browser we're handling this event
@@ -716,7 +918,7 @@ class WebNodeGUI
         var dx=WebNodeUI.mouseX-WebNodeUI.startX;
         var dy=WebNodeUI.mouseY-WebNodeUI.startY;
         // move the selected shape by the drag distance
-        var selectedNode=WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+        var selectedNode=WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex];
         selectedNode.x+=dx;
         selectedNode.y+=dy;
         // clear the canvas and redraw all shapes
@@ -738,7 +940,7 @@ class WebNodeGUI
             var dy=WebNodeUI.mouseY-WebNodeUI.startY;
             var nx = 0;
             var ny = 0;
-            var selectedNode=WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+            var selectedNode=WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex];
             WebNodeUI.Draw();
             if(selectedNode.selectedinputPin>-1)
             {
@@ -758,10 +960,10 @@ class WebNodeGUI
                 
                
             }
-            for(var i=0;i<WebDoc.Nodes.length;i++)
+            for(var i=0;i<WebNodeUI.CurrentDoc.Nodes.length;i++)
             {
     
-                if(WebDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                if(WebNodeUI.CurrentDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
                 {
                     
     
@@ -783,18 +985,28 @@ class WebNodeGUI
             
             if(p.MouseOver(mx,my))
             {
-                p.hovering=true;
                 WebNodeUI.isHoveringUI=true;
                 WebNodeUI.hoveringElement=p;
-            } else {
-                p.hovering=false;
             }
+        }
+        if(WebNodeUI.GraphList.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.GraphList.hoveringElement;            
+        }
+        if(WebNodeUI.NewFunction.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.NewFunction;
+        }
+        if(WebNodeUI.NewVariable.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.NewVariable;
         }
         
     }
-
-
-
+    
     uuidv4() {
         return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -822,8 +1034,8 @@ function LoadMyFonts(context)
 
 function LoadPixelFont(e)
 {
-    PixelFontCanvas.loadFont('BMFont/', 'Webdir.fnt', (data) => { pixelDirFontLoaded = true; WebDoc.Draw(); });
-    PixelFontCanvas.loadFont('BMFont/', 'Webapp.fnt', (data) => { pixelFontLoaded=true; WebDoc.Draw(); });
+    PixelFontCanvas.loadFont('BMFont/', 'Webdir.fnt', (data) => { pixelDirFontLoaded = true; WebNodeUI.Draw(); });
+    PixelFontCanvas.loadFont('BMFont/', 'Webapp.fnt', (data) => { pixelFontLoaded=true; WebNodeUI.Draw(); });
 
 }
 
