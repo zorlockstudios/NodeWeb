@@ -1,17 +1,5 @@
-var blueNode;
-var redNode;
-var isDragging=false;
-var isConnecting=false;
-var isScrolling=false;
-var startX,startY;
-var ctx;
-
-var offsetX,offsetY;
-var ScrollX=0,ScrollY=0;
-var selectedShapeIndex;
-var selectedShapeConnectionIndex = -1;
 var pixelFontLoaded=false;
-
+var pixelDirFontLoaded=false;
 var WebDoc;
 var WebNodeUI;
 
@@ -22,8 +10,11 @@ function reOffset(){
     w = c.width;
     h = c.height;
     var BB=c.getBoundingClientRect();
-    offsetX=BB.left;
-    offsetY=BB.top; 
+
+    WebNodeUI.offsetX=BB.left;
+    WebNodeUI.offsetY=BB.top; 
+    WebNodeUI.w = w;
+    WebNodeUI.h = h;
     WebNodeUI.Draw();  
 }
 
@@ -40,10 +31,11 @@ function Init()
     }
     WebNodeUI= new WebNodeGUI(canvas,ctx,w,h);
     WebDoc = new WebNodeDocument(canvas,ctx,"document");
-    canvas.onmousedown=handleMouseDown;
-    canvas.onmousemove=handleMouseMove;
-    canvas.onmouseup=handleMouseUp;
-    canvas.onmouseout=handleMouseOut;
+    WebNodeUI.Init();
+    canvas.onmousedown=WebNodeUI.HandleMouseDown;
+    canvas.onmousemove=WebNodeUI.HandleMouseMove;
+    canvas.onmouseup=WebNodeUI.HandleMouseUp;
+    canvas.onmouseout=WebNodeUI.HandleMouseOut;
     window.onscroll=function(e){ reOffset(); }
     window.onresize=function(e){ reOffset(); }
     canvas.onresize=function(e){ reOffset(); }
@@ -101,226 +93,10 @@ function Init()
 
 }
 
-function handleMouseDown(e){
-    // tell the browser we're handling this event
-    e.preventDefault();
-    e.stopPropagation();
 
-    if(e.button==0)
-    {
-        startX=parseInt(e.clientX-offsetX);
-        startY=parseInt(e.clientY-offsetY); 
-        for(var i=0;i<WebDoc.Nodes.length;i++){
-            if(isMouseInNode(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
-            {
-                selectedShapeIndex=i;
-                // set the isDragging flag
-                isDragging=true;
-                // and return (==stop looking for 
-                //     further shapes under the mouse)
-                return;
-            }
-            if(isMouseInPin(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
-            {
-                
-                if(!isConnecting)
-                {
-                    selectedShapeIndex=i;
-                    isConnecting=true;
-                } else {
-                    selectedShapeConnectionIndex = i;
-                }
-                
-                //refresh
-                WebNodeUI.Draw();
-                return;
-            }
-        }
-    } else if(e.button==1)
-    {
-        startX=parseInt(e.clientX-offsetX)-ScrollX;
-        startY=parseInt(e.clientY-offsetY)-ScrollY; 
-        isScrolling = true;
-    }
 
-}
 
-function handleMouseUp(e){
-    // return if we're not dragging
-    if(!isDragging && !isConnecting && !isScrolling){return;}
-    // tell the browser we're handling this event
-    e.preventDefault();
-    e.stopPropagation();
-    // the drag is over -- clear the isDragging flag
-    isDragging=false;
-    isScrolling=false;
-    if(isConnecting)
-    {
-        //create the connection if it exists. 
-        var node = WebDoc.Nodes[selectedShapeIndex];
-        if(node.selectedinputPin>-1)
-        {
-            if(selectedShapeConnectionIndex>-1)
-            {
-                var selnode = WebDoc.Nodes[selectedShapeConnectionIndex];
-                if(selnode.selectedoutputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
-                {
-                    if(node.inputs[node.selectedinputPin].t==selnode.outputs[selnode.selectedoutputPin].t)
-                    {
-                        node.inputs[node.selectedinputPin].AddConnection(selnode.outputs[selnode.selectedoutputPin]);
-                        selnode.outputs[selnode.selectedoutputPin].AddConnection(node.inputs[node.selectedinputPin]);
-                    }
-                }
-            }
-        }
-        else if(node.selectedoutputPin >-1)
-        {
-            if(selectedShapeConnectionIndex>-1)
-            {
-                var selnode = WebDoc.Nodes[selectedShapeConnectionIndex];
-                if(selnode.selectedinputPin>-1 && selectedShapeConnectionIndex!=selectedShapeIndex)
-                {
-                    if(node.outputs[node.selectedoutputPin].t==selnode.inputs[selnode.selectedinputPin].t)
-                    {
-                        node.outputs[node.selectedoutputPin].AddConnection(selnode.inputs[selnode.selectedinputPin]);
-                        selnode.inputs[selnode.selectedinputPin].AddConnection(node.outputs[node.selectedoutputPin]);
-                    }
-                }
-            }
-        }
-    }
 
-    isConnecting=false;
-    WebNodeUI.Draw();
-}
-
-function handleMouseOut(e){
-    // return if we're not dragging
-    if(!isDragging && !isConnecting && !isScrolling){return;}
-    // tell the browser we're handling this event
-    e.preventDefault();
-    e.stopPropagation();
-    // the drag is over -- clear the isDragging flag
-    isDragging=false;
-    isConnecting=false;
-    isScrolling=false;
-    WebNodeUI.Draw();
-}
-
-function handleMouseMove(e){
-    // return if we're not dragging
-    if(!isDragging && !isConnecting && !isScrolling)
-    {
-        return;
-    }
-    if(isScrolling)
-    {
-        e.preventDefault();
-        e.stopPropagation();
-
-        mouseX=parseInt(e.clientX-offsetX);
-        mouseY=parseInt(e.clientY-offsetY);
-
-        var dx=mouseX-startX;
-        var dy=mouseY-startY;
-
-        ScrollX=dx;
-        ScrollY=dy;
-        WebNodeUI.Draw();
-    }
-    if(isDragging){
-        
-    // tell the browser we're handling this event
-    e.preventDefault();
-    e.stopPropagation();
-    // calculate the current mouse position         
-    mouseX=parseInt(e.clientX-offsetX);
-    mouseY=parseInt(e.clientY-offsetY);
-    // how far has the mouse dragged from its previous mousemove position?
-    var dx=mouseX-startX;
-    var dy=mouseY-startY;
-    // move the selected shape by the drag distance
-    var selectedNode=WebDoc.Nodes[selectedShapeIndex];
-    selectedNode.x+=dx;
-    selectedNode.y+=dy;
-    // clear the canvas and redraw all shapes
-    WebNodeUI.Draw();
-    // update the starting drag position (== the current mouse position)
-    startX=mouseX;
-    startY=mouseY;
-    return;
-    }
-    if(isConnecting)
-    {
-        e.preventDefault();
-        e.stopPropagation();
-
-        mouseX=parseInt(e.clientX-offsetX);
-        mouseY=parseInt(e.clientY-offsetY);
-
-        var dx=mouseX-startX;
-        var dy=mouseY-startY;
-        var nx = 0;
-        var ny = 0;
-        var selectedNode=WebDoc.Nodes[selectedShapeIndex];
-        WebNodeUI.Draw();
-        if(selectedNode.selectedinputPin>-1)
-        {
-            nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
-            ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
-            selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
-            WebNodeUI.DrawConnection(nx+ScrollX,ny+ScrollY,nx-50+ScrollX,ny+ScrollY,mouseX,mouseY);
-            
-           
-        }
-        if(selectedNode.selectedoutputPin>-1)
-        {
-            nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
-            ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
-            selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
-            WebNodeUI.DrawConnection(nx+ScrollX,ny+ScrollY,nx+50+ScrollX,ny+ScrollY,mouseX,mouseY);
-            
-           
-        }
-        for(var i=0;i<WebDoc.Nodes.length;i++)
-        {
-
-            if(isMouseInPin(startX-ScrollX,startY-ScrollY,WebDoc.Nodes[i]))
-            {
-                
-
-                selectedShapeConnectionIndex = i;
-
-            }
-        }
-        startX=mouseX;
-        startY=mouseY;
-        return;
-    }
-}
-
-function isMouseInPin(mx,my,node)
-{
-    return(node.OverPin(mx,my));
-}
-
-function isMouseInNode(mx,my,node)
-{
-    if( mx>node.x && mx<node.x+node.w && my>node.y && my<node.y+node.radius){
-        return(true);
-    } else {
-        return(false);
-    }  
-}
-
-function isMouseInShape(mx,my,x,y,w,h)
-{
-    if( mx>x && mx<x+w && my>y && my<y+h){
-        return(true);
-    } else {
-        return(false);
-    }  
-}
 
 class WebPinConnection {
 
@@ -389,6 +165,16 @@ class WebNode {
         this.selectedoutputPin = -1;
     }
 
+
+    MouseOver(mx,my)
+    {
+        if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.radius){
+            return(true);
+        } else {
+            return(false);
+        }  
+    }
+
     OverPin(mx,my)
     {
         var isover = false;
@@ -430,7 +216,7 @@ class WebNode {
     drawThisNode()
     {
         
-        WebNodeUI.DrawNode(this.name,this.x+ScrollX, this.y+ScrollY, this.w, this.h,this.t);
+        WebNodeUI.DrawNode(this.name,this.x+WebNodeUI.ScrollX, this.y+WebNodeUI.ScrollY, this.w, this.h,this.t);
         this.drawPins(this.inputs,0);
         this.drawPins(this.outputs,1);
     }
@@ -442,7 +228,7 @@ class WebNode {
         {
             var con = pin.connections[index];
             this.context.strokeStyle = colortype(pin.t); 
-            WebNodeUI.DrawConnection(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.x+pin.x+control+ScrollX,this.y+pin.y+ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+ScrollY);
+            WebNodeUI.DrawConnection(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.x+pin.x+control+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+WebNodeUI.ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+WebNodeUI.ScrollY);
         }
         
     }
@@ -453,39 +239,49 @@ class WebNode {
         {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
-                this.context.beginPath();
-                this.context.arc(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.radius/3,0,360,0);
-                if(this.selectedinputPin==index && isConnecting)
+                if(pin.t!=4)
                 {
-                    this.context.strokeStyle = colortype(pin.t); 
+                    this.context.beginPath();
+                    this.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
+                    if(this.selectedinputPin==index && WebNodeUI.isConnecting)
+                    {
+                        this.context.strokeStyle = colortype(pin.t); 
+                    } else {
+                        this.context.strokeStyle = colortype(pin.t);  
+                    }
+                    //this.context.strokeStyle = 'white';
+                    this.context.lineWidth="3";
+                    this.context.stroke();
+                    this.context.closePath();
                 } else {
-                    this.context.strokeStyle = colortype(pin.t);  
+                    WebNodeUI.DrawIcon(this.x+pin.x+WebNodeUI.ScrollX-15,this.y+pin.y+WebNodeUI.ScrollY-15,'Webdir',1,30,String.fromCharCode(60009),'#FFFFFF');
                 }
-                //this.context.strokeStyle = 'white';
-                this.context.lineWidth="3";
-                this.context.stroke();
-                this.context.closePath();
                 this.context.textAlign = 'left';
-                WebNodeUI.DrawText(this.x+pin.x+(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
+                WebNodeUI.DrawText(this.x+pin.x+(this.radius/2)+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,-50);
             }
         } else {
             for (let index = 0; index < pins.length; index++) {
                 var pin = pins[index];
-                this.context.beginPath();
-                this.context.arc(this.x+pin.x+ScrollX,this.y+pin.y+ScrollY,this.radius/3,0,360,0);
-                if(this.selectedoutputPin==index && isConnecting)
+                if(pin.t!=4)
                 {
-                    this.context.strokeStyle = colortype(pin.t); 
+                    this.context.beginPath();
+                    this.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
+                    if(this.selectedoutputPin==index && WebNodeUI.isConnecting)
+                    {
+                        this.context.strokeStyle = colortype(pin.t); 
+                    } else {
+                        this.context.strokeStyle = colortype(pin.t);  
+                    }
+                    //this.context.strokeStyle = 'white';
+                    this.context.lineWidth="3";
+                    this.context.stroke();     
+                    this.context.closePath();
                 } else {
-                    this.context.strokeStyle = colortype(pin.t);  
+                    WebNodeUI.DrawIcon(this.x+pin.x+WebNodeUI.ScrollX-15,this.y+pin.y+WebNodeUI.ScrollY-15,'Webdir',1,30,String.fromCharCode(60009),'#FFFFFF');
                 }
-                //this.context.strokeStyle = 'white';
-                this.context.lineWidth="3";
-                this.context.stroke();     
-                this.context.closePath();
                 this.context.textAlign = 'right';
-                WebNodeUI.DrawText(this.context,this.x+pin.x-(this.radius/2)+ScrollX,this.y+pin.y+ScrollY,this.fontsize*0.75,pin.name,'white');
+                WebNodeUI.DrawText(this.x+pin.x-(this.radius/2)+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,50);
            
             }
@@ -524,13 +320,19 @@ class WebNodeGuiButton
         this.y = y;
         this.w = w;
         this.h = h;
+        this.hovering=false;
     }
 
     Draw()
     {
         WebNodeUI.context.strokeStyle = 'Black';
         WebNodeUI.context.lineWidth = 2;
-        WebNodeUI.context.fillStyle = 'Gray';
+        if(this.hovering)
+        {
+            WebNodeUI.context.fillStyle = 'GoldenRod';
+        } else {
+            WebNodeUI.context.fillStyle = 'Gray';
+        }
         WebNodeUI.context.fillRect(this.x, this.y, this.w, this.h); 
         //New      
         WebNodeUI.DrawIcon(this.x+((this.w/2)-15),this.y+((this.w/2)-15),'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
@@ -538,6 +340,15 @@ class WebNodeGuiButton
         WebNodeUI.context.shadowBlur = 2;
         WebNodeUI.context.shadowColor = 'Black';
         WebNodeUI.DrawText(this.x+(this.w/2),this.y+this.h-8,16,this.label,'white');
+    }
+
+    MouseOver(mx,my)
+    {
+        if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.h){
+            return(true);
+        } else {
+            return(false);
+        }  
     }
 }
 
@@ -548,6 +359,8 @@ class WebNodeGUI
         this.isDragging=false;
         this.isConnecting=false;
         this.isScrolling=false;
+        this.isHoveringUI=false;
+        this.hoveringElement;
         this.startX = 0;
         this.startY = 0;
         this.canvas = canvas;
@@ -562,10 +375,17 @@ class WebNodeGUI
         this.pixelFontLoaded=false;
         this.w = width;
         this.h = height;
-        this.NewButton = new WebNodeGuiButton(61200,'New',20,5,80,80);
-        this.SaveButton = new WebNodeGuiButton(61189,'Save',120,5,80,80);
-        this.LoadButton = new WebNodeGuiButton(61216,'Load',220,5,80,80);
-        this.CompileButton = new WebNodeGuiButton(61409,'Compile',320,5,80,80);
+        this.MenuButtons = []
+    }
+
+    Init()
+    {
+        this.MenuButtons.push(new WebNodeGuiButton(61223,'New',20,5,80,80));
+        this.MenuButtons.push(new WebNodeGuiButton(61189,'Save',120,5,80,80));
+        this.MenuButtons.push(new WebNodeGuiButton(61237,'Load',220,5,80,80));
+        this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',320,5,80,80));
+        this.MenuButtons.push(new WebNodeGuiButton(61401,'Launch',420,5,80,80));
+
     }
 
     Draw()
@@ -715,29 +535,15 @@ class WebNodeGUI
     {
         this.context.fillStyle = 'DimGrey';
         this.context.fillRect(0, 0, w, 90); 
-        this.NewButton.Draw();
-        this.SaveButton.Draw();
-        this.LoadButton.Draw();
-        this.CompileButton.Draw();
-        /*
-        //New      
-        this.DrawIcon(20,5,'Webapp',1,30,String.fromCharCode(61200),'#FFFFFF');
-        this.context.textAlign = 'center';
-        this.DrawText(35,50,16,'New','white');
-        //Save
-        this.DrawIcon(70,5,'Webapp',1,30,String.fromCharCode(61189),'#FFFFFF');
-        this.context.textAlign = 'center';
-        this.DrawText(85,50,16,'Save','white');
-        //Open
-        this.DrawIcon(120,5,'Webapp',1,30,String.fromCharCode(61216),'#FFFFFF');
-        this.context.textAlign = 'center';
-        this.DrawText(135,50,16,'Load','white');
-        */
+        for (let index = 0; index < WebNodeUI.MenuButtons.length; index++) {
+            var p = WebNodeUI.MenuButtons[index];
+            p.Draw();
+        }
     }
 
     DrawIcon(xx,yy,bfont,bscale,bwidth,character,tint)
     {
-        if(pixelFontLoaded)
+        if(pixelFontLoaded && pixelDirFontLoaded)
         {
             PixelFontCanvas.drawText(this.canvas,character,{
 
@@ -752,7 +558,250 @@ class WebNodeGUI
             });
         }
     }
-}
+    HandleMouseDown(e){
+        // tell the browser we're handling this event
+        e.preventDefault();
+        e.stopPropagation();
+    
+        if(e.button==0)
+        {
+            WebNodeUI.startX=parseInt(e.clientX-WebNodeUI.offsetX);
+            WebNodeUI.startY=parseInt(e.clientY-WebNodeUI.offsetY); 
+            if(!WebNodeUI.isHoveringUI)
+            {
+                for(var i=0;i<WebDoc.Nodes.length;i++){
+                    if(WebDoc.Nodes[i].MouseOver(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                    {
+                        WebNodeUI.selectedShapeIndex=i;
+                        // set the isDragging flag
+                        WebNodeUI.isDragging=true;
+                        // and return (==stop looking for 
+                        //     further shapes under the mouse)
+                        return;
+                    }
+                    if(WebDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                    {
+                        
+                        if(!WebNodeUI.isConnecting)
+                        {
+                            WebNodeUI.selectedShapeIndex=i;
+                            WebNodeUI.isConnecting=true;
+                        } else {
+                            WebNodeUI.selectedShapeConnectionIndex = i;
+                        }
+                        
+                        //refresh
+                        WebNodeUI.Draw();
+                        return;
+                    }
+                }
+            }
+        } else if(e.button==1)
+        {
+            WebNodeUI.startX=parseInt(e.clientX-WebNodeUI.offsetX)-WebNodeUI.ScrollX;
+            WebNodeUI.startY=parseInt(e.clientY-WebNodeUI.offsetY)-WebNodeUI.ScrollY; 
+            WebNodeUI.isScrolling = true;
+            WebNodeUI.Draw();
+        }
+    
+    }
+
+    HandleMouseUp(e){
+        // return if we're not dragging
+        if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling){return;}
+        // tell the browser we're handling this event
+        e.preventDefault();
+        e.stopPropagation();
+        // the drag is over -- clear the isDragging flag
+        WebNodeUI.isDragging=false;
+        WebNodeUI.isScrolling=false;
+        if(WebNodeUI.isConnecting)
+        {
+            //create the connection if it exists. 
+            var node = WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+            if(node.selectedinputPin>-1)
+            {
+                if(WebNodeUI.selectedShapeConnectionIndex>-1)
+                {
+                    var selnode = WebDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
+                    if(selnode.selectedoutputPin>-1 && WebNodeUI.selectedShapeConnectionIndex!=WebNodeUI.selectedShapeIndex)
+                    {
+                        if(node.inputs[node.selectedinputPin].t==selnode.outputs[selnode.selectedoutputPin].t)
+                        {
+                            node.inputs[node.selectedinputPin].AddConnection(selnode.outputs[selnode.selectedoutputPin]);
+                            selnode.outputs[selnode.selectedoutputPin].AddConnection(node.inputs[node.selectedinputPin]);
+                        }
+                    }
+                }
+            }
+            else if(node.selectedoutputPin >-1)
+            {
+                if(WebNodeUI.selectedShapeConnectionIndex>-1)
+                {
+                    var selnode = WebDoc.Nodes[WebNodeUI.selectedShapeConnectionIndex];
+                    if(selnode.selectedinputPin>-1 && WebNodeUI.selectedShapeConnectionIndex!=WebNodeUI.selectedShapeIndex)
+                    {
+                        if(node.outputs[node.selectedoutputPin].t==selnode.inputs[selnode.selectedinputPin].t)
+                        {
+                            node.outputs[node.selectedoutputPin].AddConnection(selnode.inputs[selnode.selectedinputPin]);
+                            selnode.inputs[selnode.selectedinputPin].AddConnection(node.outputs[node.selectedoutputPin]);
+                        }
+                    }
+                }
+            }
+        }
+    
+        WebNodeUI.isConnecting=false;
+        WebNodeUI.Draw();
+    }
+
+
+    HandleMouseOut(e)
+    {
+        // return if we're not dragging
+        if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling){
+            
+            return;
+        }
+        // tell the browser we're handling this event
+        e.preventDefault();
+        e.stopPropagation();
+        // the drag is over -- clear the isDragging flag
+        WebNodeUI.isDragging=false;
+        WebNodeUI.isConnecting=false;
+        WebNodeUI.isScrolling=false;
+        WebNodeUI.Draw();
+    }
+
+    HandleMouseMove(e)
+    {
+        // return if we're not dragging
+        if(!WebNodeUI.isDragging && !WebNodeUI.isConnecting && !WebNodeUI.isScrolling)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+    
+            WebNodeUI.mouseX=parseInt(e.clientX-WebNodeUI.offsetX);
+            WebNodeUI.mouseY=parseInt(e.clientY-WebNodeUI.offsetY);
+            //check UI hovering
+            WebNodeUI.CheckButtonHover(WebNodeUI.mouseX,WebNodeUI.mouseY);
+            WebNodeUI.Draw();
+            return;
+        }
+        if(WebNodeUI.isScrolling)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+    
+            WebNodeUI.mouseX=parseInt(e.clientX-WebNodeUI.offsetX);
+            WebNodeUI.mouseY=parseInt(e.clientY-WebNodeUI.offsetY);
+    
+            var dx=WebNodeUI.mouseX-WebNodeUI.startX;
+            var dy=WebNodeUI.mouseY-WebNodeUI.startY;
+    
+            WebNodeUI.ScrollX=dx;
+            WebNodeUI.ScrollY=dy;
+            WebNodeUI.Draw();
+            return;
+        }
+        if(WebNodeUI.isDragging){
+            
+        // tell the browser we're handling this event
+        e.preventDefault();
+        e.stopPropagation();
+        // calculate the current mouse position         
+        WebNodeUI.mouseX=parseInt(e.clientX-WebNodeUI.offsetX);
+        WebNodeUI.mouseY=parseInt(e.clientY-WebNodeUI.offsetY);
+        // how far has the mouse dragged from its previous mousemove position?
+        var dx=WebNodeUI.mouseX-WebNodeUI.startX;
+        var dy=WebNodeUI.mouseY-WebNodeUI.startY;
+        // move the selected shape by the drag distance
+        var selectedNode=WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+        selectedNode.x+=dx;
+        selectedNode.y+=dy;
+        // clear the canvas and redraw all shapes
+        WebNodeUI.Draw();
+        // update the starting drag position (== the current mouse position)
+        WebNodeUI.startX=WebNodeUI.mouseX;
+        WebNodeUI.startY=WebNodeUI.mouseY;
+        return;
+        }
+        if(WebNodeUI.isConnecting)
+        {
+            e.preventDefault();
+            e.stopPropagation();
+    
+            WebNodeUI.mouseX=parseInt(e.clientX-WebNodeUI.offsetX);
+            WebNodeUI.mouseY=parseInt(e.clientY-WebNodeUI.offsetY);
+    
+            var dx=WebNodeUI.mouseX-WebNodeUI.startX;
+            var dy=WebNodeUI.mouseY-WebNodeUI.startY;
+            var nx = 0;
+            var ny = 0;
+            var selectedNode=WebDoc.Nodes[WebNodeUI.selectedShapeIndex];
+            WebNodeUI.Draw();
+            if(selectedNode.selectedinputPin>-1)
+            {
+                nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
+                ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
+                selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
+                WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+ScrollY,nx-50+WebNodeUI.ScrollX,ny+ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
+                
+               
+            }
+            if(selectedNode.selectedoutputPin>-1)
+            {
+                nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
+                ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
+                selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
+                WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,nx+50+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
+                
+               
+            }
+            for(var i=0;i<WebDoc.Nodes.length;i++)
+            {
+    
+                if(WebDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
+                {
+                    
+    
+                    WebNodeUI.selectedShapeConnectionIndex = i;
+    
+                }
+            }
+            WebNodeUI.startX=WebNodeUI.mouseX;
+            WebNodeUI.startY=WebNodeUI.mouseY;
+            return;
+        }
+    }
+
+    CheckButtonHover(mx,my)
+    {
+        WebNodeUI.isHoveringUI=false;
+        for (let index = 0; index < WebNodeUI.MenuButtons.length; index++) {
+            var p = WebNodeUI.MenuButtons[index];
+            
+            if(p.MouseOver(mx,my))
+            {
+                p.hovering=true;
+                WebNodeUI.isHoveringUI=true;
+                WebNodeUI.hoveringElement=p;
+            } else {
+                p.hovering=false;
+            }
+        }
+        
+    }
+
+
+
+    uuidv4() {
+        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+          (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+        );
+      }
+
+} 
 
 function LoadMyFonts(context)
 {
@@ -773,6 +822,7 @@ function LoadMyFonts(context)
 
 function LoadPixelFont(e)
 {
+    PixelFontCanvas.loadFont('BMFont/', 'Webdir.fnt', (data) => { pixelDirFontLoaded = true; WebDoc.Draw(); });
     PixelFontCanvas.loadFont('BMFont/', 'Webapp.fnt', (data) => { pixelFontLoaded=true; WebDoc.Draw(); });
 
 }
