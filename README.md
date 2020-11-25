@@ -7,5 +7,7 @@ There's so many cool things that are closed off to people who don't want to lear
 
 ## Here's some previews currently. 
 
+![Image of Main Editor](https://github.com/zorlockstudios/NodeWeb/blob/main/Docs/Images/DocumentEditor.png)
 
+![Image of New Function](https://github.com/zorlockstudios/NodeWeb/blob/main/Docs/Images/Function.png)
 
