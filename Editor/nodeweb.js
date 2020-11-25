@@ -313,14 +313,23 @@ class WebNodeDocument
         }
     }
 
-    AddNewFunction()
-    {   
-        var nf = new WebNodeFunction(this.canvas,this.context,'New Func');
-        WebNodeUI.CurrentDoc = nf;
-        WebNodeUI.FunctionList.AddItem(61167,nf.name,nf);
-        this.Functions.push(nf);
+    AddNewVariable()
+    {
+        //var nv = new WebVar(name,t,parent,containerType);
+        $('#newvarModal').modal('show');
     }
 
+    AddNewFunction()
+    {   
+
+        $('#newfuncModal').modal('show');
+
+    }
+
+    OnClick()
+    {
+        WebNodeUI.CurrentDoc = this.obj;
+    }
 }
 
 
@@ -330,6 +339,13 @@ class WebNodeFunction extends WebNodeDocument
     {       
         super(canvas,context,name);
 
+    }
+
+    InitFunc()
+    {
+        var myNode = new WebNode(ctx,'Entry to '+this.name,WebNodeUI.w/2,WebNodeUI.h/2,200,100,2);
+        myNode.AddOutput("",vartypes.FLOW,0);   
+        this.Nodes.push(myNode);
     }
 
 }
@@ -418,7 +434,8 @@ class WebNodeGuiListItem extends WebNodeGuiWidget
     {
         super(x,y,w,h);
         this.icon = icon;
-        this.label = label;       
+        this.label = label;     
+        this.parent;  
     }
 
     Draw()
@@ -426,10 +443,16 @@ class WebNodeGuiListItem extends WebNodeGuiWidget
 
         WebNodeUI.context.strokeStyle = 'Black';
         WebNodeUI.context.lineWidth = 2;
-        if(this.hovering)
+        if(this.parent.hovering)
         {
-            WebNodeUI.context.fillStyle = 'GoldenRod';
+            if(this.hovering)
+            {
+                WebNodeUI.context.fillStyle = 'GoldenRod';
+            } else {
+                WebNodeUI.context.fillStyle = 'Gray';
+            }
         } else {
+            this.hovering = false;
             WebNodeUI.context.fillStyle = 'Gray';
         }
         WebNodeUI.context.fillRect(this.x, this.y, this.w, 40); 
@@ -455,24 +478,35 @@ class WebNodeGuiListView extends WebNodeGuiWidget
         this.hoveringElement;
     }
     
-    AddItem(icon,label,itm)
+    AddItem(icon,label,itm,del)
     {
         var newitem = new WebNodeGuiListItem(icon,label,0,0,100,40);
         newitem.obj = itm;
+        newitem.parent = this;
+        newitem.delegate = del;
         this.container.push(newitem);
 
     }
 
     MouseOver(mx,my)
     {
-        for (let index = 0; index < this.container.length; index++) {
-            var e = this.container[index];
-            if(e.MouseOver(mx,my))
-            {
-                this.hoveringElement = e;
-                return(true);
+        if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.h){
+            for (let index = 0; index < this.container.length; index++) {
+                var e = this.container[index];
+                if(e.MouseOver(mx,my))
+                {
+                    this.hovering = true;
+                    this.hoveringElement = e;
+                    return(true);
+                }
             }
-        }
+            return(false);
+        } else {
+            this.hovering = false;
+            this.hoveringElement = null;
+            return(false);
+        } 
+
     }
 
     Draw()
@@ -544,7 +578,7 @@ class WebNodeGUI
         this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',320,5,80,80));
         this.MenuButtons.push(new WebNodeGuiButton(61401,'Launch',420,5,80,80));
         this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
-        this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc);
+        this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc,this.MainDoc.OnClick);
         this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
         this.VariableList = new WebNodeGuiListView(61301,'Variables',5,560,100,300);
         this.NewFunction = new WebNodeGuiButton(61378,'New',35,240,60,40);
@@ -553,7 +587,7 @@ class WebNodeGUI
 
         this.NewVariable = new WebNodeGuiButton(61378,'New',35,560,60,40);
         this.NewVariable.align = "left";
-        //this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
+        this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewVariable(); };
 
         this.CurrentDoc = this.MainDoc;
         //this.LeftBarButtons.push(button);
@@ -673,6 +707,10 @@ class WebNodeGUI
                 g = this.NodeGradient(x,y,w,h,colors);
             break;
 
+            case 2:
+                var colors = ['MediumOrchid','Purple','black'];
+                g = this.NodeGradient(x,y,w,h,colors);
+            break;
             default:
                 var colors = ['darkgrey','dimgrey','black'];
                 g = this.NodeGradient(x,y,w,h,colors);
@@ -808,6 +846,10 @@ class WebNodeGUI
                 if(WebNodeUI.hoveringElement!=null)
                 {
                     WebNodeUI.hoveringElement.delegate();
+                    WebNodeUI.hoveringElement.hovering = false;
+                    WebNodeUI.isHoveringUI = false;
+                    WebNodeUI.hoveringElement = null;
+                    reOffset();
                 }
             }
             return;
@@ -886,8 +928,10 @@ class WebNodeGUI
             WebNodeUI.mouseX=parseInt(e.clientX-WebNodeUI.offsetX);
             WebNodeUI.mouseY=parseInt(e.clientY-WebNodeUI.offsetY);
             //check UI hovering
-            WebNodeUI.CheckButtonHover(WebNodeUI.mouseX,WebNodeUI.mouseY);
-            WebNodeUI.Draw();
+            if(WebNodeUI.CheckButtonHover(WebNodeUI.mouseX,WebNodeUI.mouseY))
+            {
+                WebNodeUI.Draw();
+            }
             return;
         }
         if(WebNodeUI.isScrolling)
@@ -979,6 +1023,8 @@ class WebNodeGUI
 
     CheckButtonHover(mx,my)
     {
+        var oldstate = WebNodeUI.isHoveringUI;
+        var oldelem = WebNodeUI.hoveringElement;
         WebNodeUI.isHoveringUI=false;
         for (let index = 0; index < WebNodeUI.MenuButtons.length; index++) {
             var p = WebNodeUI.MenuButtons[index];
@@ -994,6 +1040,11 @@ class WebNodeGUI
             WebNodeUI.isHoveringUI=true;
             WebNodeUI.hoveringElement=WebNodeUI.GraphList.hoveringElement;            
         }
+        if(WebNodeUI.FunctionList.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.FunctionList.hoveringElement;            
+        }
         if(WebNodeUI.NewFunction.MouseOver(mx,my))
         {
             WebNodeUI.isHoveringUI=true;
@@ -1004,7 +1055,12 @@ class WebNodeGUI
             WebNodeUI.isHoveringUI=true;
             WebNodeUI.hoveringElement=WebNodeUI.NewVariable;
         }
-        
+        if(oldstate!=WebNodeUI.isHoveringUI)
+        {
+            //state changed
+            return(true);
+        }
+        return(false);
     }
     
     uuidv4() {
@@ -1039,3 +1095,25 @@ function LoadPixelFont(e)
 
 }
 
+
+function CreateNewFunction()
+{
+    var nf = new WebNodeFunction(WebNodeUI.canvas,WebNodeUI.context,'New Func');
+    WebNodeUI.CurrentDoc = nf;
+    var fname = $('#newfuncModal').find('.modal-body input').val();
+    nf.name = fname;
+    WebNodeUI.FunctionList.AddItem(61167,fname,nf,nf.OnClick);
+    WebNodeUI.MainDoc.Functions.push(nf);
+    nf.InitFunc();
+}
+
+$(document).ready(function(){
+
+    $('#newfuncModal').on('show.bs.modal', function () {
+        var modal = $(this);
+        modal.find('.modal-body input').trigger('focus');
+        modal.find('.modal-body input').val('New Func');
+        console.log("Hello world!");
+    });
+
+});
