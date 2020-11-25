@@ -139,7 +139,7 @@ function Init()
     */
     WebNodeUI.Draw();
     //var saveit = JSON.stringify(WebDoc);
-    $.post("editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/document.begin.json", "node" : saveit});
+    //$.post("https://zorlockstudios.com/NodeWeb/Editor//editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/document.begin.json", "node" : saveit});
     //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
       /*
     $.get("editorfunctions.php?action=load-nodes", function(data, status){
