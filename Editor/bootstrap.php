@@ -34,18 +34,21 @@
                     <label for="varname" class="control-label">Variable Name</label>
                     <input type="text" class="form-control" id="varname"></textarea>
                     <label for="vartype" class="control-label">Variable Type</label>
-                    <div class="form-group" id="vartype">
-                        <select>
+                    <div class="form-group" id="form-vartype">
+                        <select id="vartype">
                             <option>Int</option>
                             <option>Float</option>
                             <option>String</option>
                             <option>Bool</option>
+                            <option>Vector2</option>
+                            <option>Vector3</option>
+                            <option>Vector4</option>
                             <option>Object</option>
                         </select>
                     </div>
                     <label for="contype" class="control-label">Data Container</label>
-                    <div class="form-group" id="contype">
-                        <select>
+                    <div class="form-group" id="form-contype">
+                        <select id="varcon">
                             <option>Single</option>
                             <option>Array</option>
                             <option>Map</option>
@@ -55,7 +58,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-                <button class="btn btn-primary" data-dismiss="modal">Create</button>
+                <button class="btn btn-primary" data-dismiss="modal" onclick="CreateNewVariable()">Create</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

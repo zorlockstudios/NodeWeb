@@ -48,21 +48,41 @@ function Init()
     
 
     
-    let myNode = new WebNode(ctx,"Write Document",550,380,200,100,0);
+    let myNode = new WebNode(ctx,"Document Begin",550,380,200,100,0);
+    myNode.AddOutput("",vartypes.FLOW,0);
+
+    //myNode.AddOutput("",vartypes.FLOW,0);
+    //myNode.AddOutput("Float",vartypes.FLOAT,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    
+    myNode = new WebNode(ctx,"Write Document",350,480,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddInput("Document Type",vartypes.STRING,0); 
     myNode.AddInput("Content",vartypes.STRING,0);
     //myNode.AddOutput("",vartypes.FLOW,0);
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebNodeUI.MainDoc.Nodes.push( myNode );
-    
+
     myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
     //myNode.AddInput("Float",vartypes.FLOAT,0);
     //myNode.AddInput("Int",vartypes.INT,0);
     //myNode.AddInput("string",vartypes.STRING,0);
     myNode.AddOutput("string",vartypes.STRING,0); 
     //var saveit = JSON.stringify(myNode);
+    
     WebNodeUI.MainDoc.Nodes.push( myNode );
+
+
+    myNode = new WebNode(ctx,"Print HelloWorld",350,280,200,100,1);
+    //myNode.AddInput("Float",vartypes.FLOAT,0);
+    //myNode.AddInput("Int",vartypes.INT,0);
+    //myNode.AddInput("string",vartypes.STRING,0);
+    myNode.AddOutput("string",vartypes.STRING,0); 
+    //var saveit = JSON.stringify(myNode);
+    
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+
+    /*
     myNode = new WebNode(ctx,"Create Vector",250,420,200,100,1);
     myNode.AddInput("INPUT X",vartypes.FLOAT,0);
     myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
@@ -83,6 +103,7 @@ function Init()
     myNode = new WebNode(ctx,"GET Y",650,680,200,100,1);
     myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebNodeUI.MainDoc.Nodes.push( myNode );
+    */
     WebNodeUI.Draw();
     //var saveit = JSON.stringify(WebDoc);
     //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
@@ -436,6 +457,7 @@ class WebNodeGuiListItem extends WebNodeGuiWidget
         this.icon = icon;
         this.label = label;     
         this.parent;  
+        this.color = '#FFFFFF';
     }
 
     Draw()
@@ -457,7 +479,7 @@ class WebNodeGuiListItem extends WebNodeGuiWidget
         }
         WebNodeUI.context.fillRect(this.x, this.y, this.w, 40); 
 
-        WebNodeUI.DrawIcon(this.x+15,this.y+5,'Webapp',1,30,String.fromCharCode(this.icon),'#FFFFFF');
+        WebNodeUI.DrawIcon(this.x+15,this.y+5,'Webapp',1,30,String.fromCharCode(this.icon),this.color);
         WebNodeUI.context.textAlign = 'left';
         WebNodeUI.context.shadowBlur = 2;
         WebNodeUI.context.shadowColor = 'Black';
@@ -478,12 +500,13 @@ class WebNodeGuiListView extends WebNodeGuiWidget
         this.hoveringElement;
     }
     
-    AddItem(icon,label,itm,del)
+    AddItem(icon,label,itm,del,col='#FFFFFF')
     {
         var newitem = new WebNodeGuiListItem(icon,label,0,0,100,40);
         newitem.obj = itm;
         newitem.parent = this;
         newitem.delegate = del;
+        newitem.color = col;
         this.container.push(newitem);
 
     }
@@ -580,7 +603,7 @@ class WebNodeGUI
         this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
         this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc,this.MainDoc.OnClick);
         this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
-        this.VariableList = new WebNodeGuiListView(61301,'Variables',5,560,100,300);
+        this.VariableList = new WebNodeGuiListView(61374,'Variables',5,560,100,300);
         this.NewFunction = new WebNodeGuiButton(61378,'New',35,240,60,40);
         this.NewFunction.align = "left";
         this.NewFunction.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
@@ -1095,9 +1118,57 @@ function LoadPixelFont(e)
 
 }
 
+function CreateNewVariable()
+{
+
+    var vname = $('#newvarModal').find('.modal-body input').val();
+    var vtype = $("#vartype")[0].selectedIndex;
+    var vcon = $("#varcon")[0].selectedIndex;
+    var v = 0;
+    var c = 61338;
+    switch(vcon)
+    {
+        case 1:
+            c = 61346; 
+        break;
+
+        case 2:
+            c = 61301;
+        break;
+    }
+    switch(vtype)
+    {
+        case(0):
+            v = 1;
+        break;
+        case(1):
+            v = 2;
+        break;
+        case(2):
+            v = 3;
+        break;
+        case(3):
+            v = 5;
+        break;
+        case(4):
+            v = 6;     
+        break;
+        case(5):
+            v = 7;     
+        break;
+        case(6):
+            v = 8;     
+        break;                
+    }
+    var nv = new WebVar(vname,v,null,vcon);
+    WebNodeUI.MainDoc.Variabes.push(nv);
+    WebNodeUI.VariableList.AddItem(c,vname,nv,nv.OnClick,colortype(v));
+    WebNodeUI.Draw();
+}
 
 function CreateNewFunction()
 {
+    
     var nf = new WebNodeFunction(WebNodeUI.canvas,WebNodeUI.context,'New Func');
     WebNodeUI.CurrentDoc = nf;
     var fname = $('#newfuncModal').find('.modal-body input').val();
@@ -1105,6 +1176,7 @@ function CreateNewFunction()
     WebNodeUI.FunctionList.AddItem(61167,fname,nf,nf.OnClick);
     WebNodeUI.MainDoc.Functions.push(nf);
     nf.InitFunc();
+    WebNodeUI.Draw();
 }
 
 $(document).ready(function(){
