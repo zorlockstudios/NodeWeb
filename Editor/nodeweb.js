@@ -3,6 +3,36 @@ var pixelDirFontLoaded=false;
 //var WebDoc;
 var WebNodeUI;
 
+var vartypes = { INT: 1, FLOAT: 2, STRING: 3, FLOW : 4, BOOL : 5, VECTOR2 : 6, VECTOR3 : 7, VECTOR4 : 8 };
+
+
+function colortype(t)
+{
+    switch(t)
+    {
+        case vartypes.INT:
+            return('dodgerblue');
+        case vartypes.FLOAT:
+            return('forestgreen');
+        case vartypes.STRING:
+            return('darkviolet');
+        case vartypes.FLOW:
+            return('ghostwhite');
+        case vartypes.VECTOR2:
+            return('Olive');
+        case vartypes.BOOL:
+            return('darkred');   
+        case vartypes.VECTOR3:
+            return('Orange');       
+        case vartypes.VECTOR3:
+            return('SlateBlue');                 
+        default:
+            return ('SlateGrey');
+    }
+
+    
+}
+
 function reOffset(){
     var c = document.getElementById('canvas');
     c.width = window.innerWidth;
@@ -54,7 +84,8 @@ function Init()
     //myNode.AddOutput("",vartypes.FLOW,0);
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebNodeUI.MainDoc.Nodes.push( myNode );
-    
+    var saveit = JSON.stringify(myNode);
+
     myNode = new WebNode(ctx,"Write Document",350,480,200,100,0);
     myNode.AddInput("",vartypes.FLOW,0);
     myNode.AddInput("Document Type",vartypes.STRING,0); 
@@ -62,6 +93,8 @@ function Init()
     //myNode.AddOutput("",vartypes.FLOW,0);
     //myNode.AddOutput("Float",vartypes.FLOAT,0);
     WebNodeUI.MainDoc.Nodes.push( myNode );
+    
+
 
     myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
     //myNode.AddInput("Float",vartypes.FLOAT,0);
@@ -106,6 +139,7 @@ function Init()
     */
     WebNodeUI.Draw();
     //var saveit = JSON.stringify(WebDoc);
+    $.post("editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/document.begin.json", "node" : saveit});
     //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
       /*
     $.get("editorfunctions.php?action=load-nodes", function(data, status){
@@ -141,6 +175,7 @@ class WebVar {
         this.connections=[];
         this.parent = parent;
         this.val;
+        this.isInput = false;
     }
 
     toJSON()
@@ -155,10 +190,35 @@ class WebVar {
         };
     }
 
+    DeleteConnection(pin)
+    {
+        for (let index = 0; index < this.connections.length; index++) {
+            var p = this.connections[index];
+            if(p.B===pin)
+            {
+                this.connections.splice(0, index+1); 
+                return;
+            }
+        }
+    }
+
     AddConnection(pin)
     {
+
         let con = new WebPinConnection(0,this,pin);
-        this.connections.push(con);
+        if(this.isInput)
+        {
+            if(this.connections.length>0)
+            {
+                this.connections[0].B.DeleteConnection(this);
+                this.connections[0]=con;
+            } else {
+                this.connections.push(con);
+            }
+        } else {
+            this.connections.push(con);
+        }
+        
     }
 
     SetPinLocation(x,y)
@@ -178,6 +238,7 @@ class WebNode {
         this.w = w;
         this.h = h;
         this.t = t;
+        this.templatepath = "..";
         this.context = context;
         this.inputs=[];
         this.outputs=[];
@@ -224,7 +285,8 @@ class WebNode {
 
     AddInput(name,t,containerType)
     {
-        let myInput = new WebVar(name,t,this,containerType);       
+        let myInput = new WebVar(name,t,this,containerType);      
+        myInput.isInput = true; 
         myInput.SetPinLocation(this.radius,(this.radius*2)+((this.radius)*this.inputs.length));
         this.inputs.push(myInput);
     }
@@ -1014,7 +1076,7 @@ class WebNodeGUI
                 nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
                 ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
                 selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
-                WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+ScrollY,nx-50+WebNodeUI.ScrollX,ny+ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
+                WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,nx-50+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
                 
                
             }
