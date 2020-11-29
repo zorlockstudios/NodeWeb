@@ -1,0 +1,73 @@
+ //TEST
+
+    
+
+    
+    let myNode = new WebNode(ctx,"HTML Document Begin",550,380,200,100,0);
+    myNode.AddOutput("",vartypes.FLOW,0);
+
+    //myNode.AddOutput("",vartypes.FLOW,0);
+    //myNode.AddOutput("Float",vartypes.FLOAT,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    //var saveit = JSON.stringify(myNode);
+
+    myNode = new WebNode(ctx,"Write HTML Document",350,480,200,100,0);
+    myNode.AddInput("",vartypes.FLOW,0);
+    //myNode.AddInput("Document Type",vartypes.STRING,0); 
+    myNode.AddInput("Content",vartypes.STRING,0);
+    //myNode.AddOutput("",vartypes.FLOW,0);
+    //myNode.AddOutput("Float",vartypes.FLOAT,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    
+
+/*
+    myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
+    //myNode.AddInput("Float",vartypes.FLOAT,0);
+    //myNode.AddInput("Int",vartypes.INT,0);
+    //myNode.AddInput("string",vartypes.STRING,0);
+    myNode.AddOutput("string",vartypes.STRING,0); 
+    //var saveit = JSON.stringify(myNode);
+    
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+*/
+
+    myNode = new WebNode(ctx,"Print HelloWorld",350,280,200,100,1);
+    //myNode.AddInput("Float",vartypes.FLOAT,0);
+    //myNode.AddInput("Int",vartypes.INT,0);
+    //myNode.AddInput("string",vartypes.STRING,0);
+    myNode.AddOutput("string",vartypes.STRING,0); 
+    //var saveit = JSON.stringify(myNode);
+    
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    var saveit = JSON.stringify(myNode);
+    /*
+    myNode = new WebNode(ctx,"Create Vector",250,420,200,100,1);
+    myNode.AddInput("INPUT X",vartypes.FLOAT,0);
+    myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
+
+    myNode.AddOutput("Vector 2",vartypes.VECTOR2,0); 
+
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+
+    myNode = new WebNode(ctx,"Set Some Vector2",350,580,200,100,0);
+    myNode.AddInput("",vartypes.FLOW,0);
+    myNode.AddOutput("",vartypes.FLOW,0);   
+    myNode.AddInput("Vector2",vartypes.VECTOR2,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+
+    myNode = new WebNode(ctx,"GET X",750,780,200,100,1);
+    myNode.AddOutput("Float",vartypes.FLOAT,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    myNode = new WebNode(ctx,"GET Y",650,680,200,100,1);
+    myNode.AddOutput("Float",vartypes.FLOAT,0);
+    WebNodeUI.MainDoc.Nodes.push( myNode );
+    */
+    WebNodeUI.Draw();
+    //var saveit = JSON.stringify(WebDoc);
+    //$.post("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/print.helloworld", "node" : saveit});
+    //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc", "doc" : saveit});
+      /*
+    $.get("editorfunctions.php?action=load-nodes", function(data, status){
+        alert("Data: " + data + "\nStatus: " + status);
+    });
+    */

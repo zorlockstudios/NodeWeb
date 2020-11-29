@@ -1,11 +1,11 @@
 {
-    "name":"Write Document",
+    "name":"Write HTML Document",
     "x":350,
     "y":480,
     "w":200,
     "h":100,
     "t":0,
-    "templatepath":"Nodes/HTML/document.write.template.txt",
+    "templatepath":"Nodes/HTML/document.write.template.php",
     "context":{},
     "inputs":
     [
@@ -14,17 +14,6 @@
             "t":4,
             "containerType":0,
             "x":20,"y":40,
-            "connections":
-            [
-
-            ]
-        },
-        {
-            "name":"Document Type",
-            "t":3,
-            "containerType":0,
-            "x":20,
-            "y":60,
             "connections":
             [
 
@@ -42,10 +31,7 @@
             ]
         }
     ],
-    "outputs":
-    [
-
-    ],
+    "outputs":[],
     "radius":20,
     "fontsize":12,
     "g":

@@ -1,19 +1,13 @@
 {
-    "name":"Document Begin",
+    "name":"HTML Document Begin",
     "x":550,
     "y":380,
     "w":200,
     "h":100,
     "t":0,
-    "templatepath":"Nodes/HTML/document.begin.template.txt",
-    "context":
-    {
-
-    },
-    "inputs":
-    [
-
-    ],
+    "templatepath":"Nodes/HTML/document.begin.template.php",
+    "context":{},
+    "inputs":[],
     "outputs":
     [
         {
@@ -22,18 +16,20 @@
             "containerType":0,
             "x":180,
             "y":40,
-            "connections":
-            [
-
-            ]
+            "connections":[]
+        },
+        {
+            "name":"string",
+            "t":3,
+            "containerType":0,
+            "x":180,
+            "y":80,
+            "connections":[]
         }
     ],
     "radius":20,
     "fontsize":12,
-    "g":
-    {
-
-    },
+    "g":{},
     "selectedinputPin":-1,
     "selectedoutputPin":-1
 }

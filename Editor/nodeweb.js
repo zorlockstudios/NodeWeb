@@ -73,85 +73,12 @@ function Init()
     window.addEventListener('DOMContentLoaded',LoadPixelFont);
     
     reOffset();
-    //TEST
-
-    
-
-    
-    let myNode = new WebNode(ctx,"Document Begin",550,380,200,100,0);
-    myNode.AddOutput("",vartypes.FLOW,0);
-
-    //myNode.AddOutput("",vartypes.FLOW,0);
-    //myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-    var saveit = JSON.stringify(myNode);
-
-    myNode = new WebNode(ctx,"Write Document",350,480,200,100,0);
-    myNode.AddInput("",vartypes.FLOW,0);
-    myNode.AddInput("Document Type",vartypes.STRING,0); 
-    myNode.AddInput("Content",vartypes.STRING,0);
-    //myNode.AddOutput("",vartypes.FLOW,0);
-    //myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-    
-
-
-    myNode = new WebNode(ctx,"Doctype Javascript",350,280,200,100,1);
-    //myNode.AddInput("Float",vartypes.FLOAT,0);
-    //myNode.AddInput("Int",vartypes.INT,0);
-    //myNode.AddInput("string",vartypes.STRING,0);
-    myNode.AddOutput("string",vartypes.STRING,0); 
-    //var saveit = JSON.stringify(myNode);
-    
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-
-
-    myNode = new WebNode(ctx,"Print HelloWorld",350,280,200,100,1);
-    //myNode.AddInput("Float",vartypes.FLOAT,0);
-    //myNode.AddInput("Int",vartypes.INT,0);
-    //myNode.AddInput("string",vartypes.STRING,0);
-    myNode.AddOutput("string",vartypes.STRING,0); 
-    //var saveit = JSON.stringify(myNode);
-    
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-
-    /*
-    myNode = new WebNode(ctx,"Create Vector",250,420,200,100,1);
-    myNode.AddInput("INPUT X",vartypes.FLOAT,0);
-    myNode.AddInput("INPUT Y",vartypes.FLOAT,0);
-
-    myNode.AddOutput("Vector 2",vartypes.VECTOR2,0); 
-
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-
-    myNode = new WebNode(ctx,"Set Some Vector2",350,580,200,100,0);
-    myNode.AddInput("",vartypes.FLOW,0);
-    myNode.AddOutput("",vartypes.FLOW,0);   
-    myNode.AddInput("Vector2",vartypes.VECTOR2,0);
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-
-    myNode = new WebNode(ctx,"GET X",750,780,200,100,1);
-    myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-    myNode = new WebNode(ctx,"GET Y",650,680,200,100,1);
-    myNode.AddOutput("Float",vartypes.FLOAT,0);
-    WebNodeUI.MainDoc.Nodes.push( myNode );
-    */
-    WebNodeUI.Draw();
-    //var saveit = JSON.stringify(WebDoc);
-    //$.post("https://zorlockstudios.com/NodeWeb/Editor//editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/document.begin.json", "node" : saveit});
-    //$.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/TestDoc.json", "doc" : saveit});
-      /*
-    $.get("editorfunctions.php?action=load-nodes", function(data, status){
-        alert("Data: " + data + "\nStatus: " + status);
-    });
-    */
-
+   
+    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.begin',true);
+    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/print.helloworld');
+    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.write');
+    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/add.string');
 }
-
-
-
-
 
 
 class WebPinConnection {
@@ -161,6 +88,17 @@ class WebPinConnection {
         this.t = t;
         this.A = A;
         this.B = B;
+        this.guid;
+    }
+
+    toJSON()
+    {
+        return {
+            "t" : this.t,
+            "guid" : this.guid,
+            "A" : this.A.guid,
+            "B" : this.B.guid
+        };
     }
 }
 
@@ -176,6 +114,9 @@ class WebVar {
         this.parent = parent;
         this.val;
         this.isInput = false;
+        this.defaultval;
+        this.currentval;
+        this.guid;
     }
 
     toJSON()
@@ -187,6 +128,8 @@ class WebVar {
             "x" : this.x,
             "y" : this.y,
             "connections" : this.connections,
+            "defaultval" : this.defaultval,
+            "guid" : this.guid
         };
     }
 
@@ -206,6 +149,7 @@ class WebVar {
     {
 
         let con = new WebPinConnection(0,this,pin);
+        con.guid = WebNodeUI.uuidv4();
         if(this.isInput)
         {
             if(this.connections.length>0)
@@ -239,7 +183,7 @@ class WebNode {
         this.h = h;
         this.t = t;
         this.templatepath = "..";
-        this.context = context;
+        this.context = WebNodeUI.context;
         this.inputs=[];
         this.outputs=[];
         this.radius = 20;
@@ -247,8 +191,25 @@ class WebNode {
         this.g = WebNodeUI.GetNodeGradient(x,y,w,h,t);
         this.selectedinputPin = -1;
         this.selectedoutputPin = -1;
+        this.guid;
     }
 
+    Reload()
+    {
+        var index = 0;
+        for (index = 0; index < this.inputs.length; index++) {
+            var pin = this.inputs[index];
+            var thepin = new WebVar(pin.name,pin.t,this,pin.containerType);
+            this.inputs[index] = Object.assign(thepin,pin);
+            this.inputs[index].guid = WebNodeUI.uuidv4();
+        } 
+        for (index = 0; index < this.outputs.length; index++) {
+            var pin = this.outputs[index];
+            var thepin = new WebVar(pin.name,pin.t,this,pin.containerType);
+            this.outputs[index] = Object.assign(thepin,pin);
+            this.outputs[index].guid = WebNodeUI.uuidv4();
+        } 
+    }
 
     MouseOver(mx,my)
     {
@@ -285,7 +246,8 @@ class WebNode {
 
     AddInput(name,t,containerType)
     {
-        let myInput = new WebVar(name,t,this,containerType);      
+        let myInput = new WebVar(name,t,this,containerType);
+        myInput.guid = WebNodeUI.uuidv4();      
         myInput.isInput = true; 
         myInput.SetPinLocation(this.radius,(this.radius*2)+((this.radius)*this.inputs.length));
         this.inputs.push(myInput);
@@ -294,6 +256,7 @@ class WebNode {
     AddOutput(name,t,containerType)
     {
         let myOutput = new WebVar(name,t,this,containerType);
+        myOutput.guid = WebNodeUI.uuidv4();
         myOutput.SetPinLocation(this.w-this.radius,(this.radius*2)+((this.radius)*this.outputs.length));
         this.outputs.push(myOutput);
     }
@@ -312,7 +275,7 @@ class WebNode {
         for (let index = 0; index < pin.connections.length; index++) 
         {
             var con = pin.connections[index];
-            this.context.strokeStyle = colortype(pin.t); 
+            WebNodeUI.context.strokeStyle = colortype(pin.t); 
             WebNodeUI.DrawConnection(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.x+pin.x+control+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,(((this.x+pin.x)+(con.B.parent.x+con.B.x))/2)+WebNodeUI.ScrollX,(((con.B.parent.y+con.B.y)+(this.y+pin.y))/2)+WebNodeUI.ScrollY);
         }
         
@@ -326,22 +289,22 @@ class WebNode {
                 var pin = pins[index];
                 if(pin.t!=4)
                 {
-                    this.context.beginPath();
-                    this.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
+                    WebNodeUI.context.beginPath();
+                    WebNodeUI.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
                     if(this.selectedinputPin==index && WebNodeUI.isConnecting)
                     {
-                        this.context.strokeStyle = colortype(pin.t); 
+                        WebNodeUI.context.strokeStyle = colortype(pin.t); 
                     } else {
-                        this.context.strokeStyle = colortype(pin.t);  
+                        WebNodeUI.context.strokeStyle = colortype(pin.t);  
                     }
                     //this.context.strokeStyle = 'white';
-                    this.context.lineWidth="3";
-                    this.context.stroke();
-                    this.context.closePath();
+                    WebNodeUI.context.lineWidth="3";
+                    WebNodeUI.context.stroke();
+                    WebNodeUI.context.closePath();
                 } else {
                     WebNodeUI.DrawIcon(this.x+pin.x+WebNodeUI.ScrollX-15,this.y+pin.y+WebNodeUI.ScrollY-15,'Webdir',1,30,String.fromCharCode(60009),'#FFFFFF');
                 }
-                this.context.textAlign = 'left';
+                WebNodeUI.context.textAlign = 'left';
                 WebNodeUI.DrawText(this.x+pin.x+(this.radius/2)+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,-50);
             }
@@ -350,22 +313,22 @@ class WebNode {
                 var pin = pins[index];
                 if(pin.t!=4)
                 {
-                    this.context.beginPath();
-                    this.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
+                    WebNodeUI.context.beginPath();
+                    WebNodeUI.context.arc(this.x+pin.x+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.radius/3,0,360,0);
                     if(this.selectedoutputPin==index && WebNodeUI.isConnecting)
                     {
-                        this.context.strokeStyle = colortype(pin.t); 
+                        WebNodeUI.context.strokeStyle = colortype(pin.t); 
                     } else {
-                        this.context.strokeStyle = colortype(pin.t);  
+                        WebNodeUI.context.strokeStyle = colortype(pin.t);  
                     }
                     //this.context.strokeStyle = 'white';
-                    this.context.lineWidth="3";
-                    this.context.stroke();     
-                    this.context.closePath();
+                    WebNodeUI.context.lineWidth="3";
+                    WebNodeUI.context.stroke();     
+                    WebNodeUI.context.closePath();
                 } else {
                     WebNodeUI.DrawIcon(this.x+pin.x+WebNodeUI.ScrollX-15,this.y+pin.y+WebNodeUI.ScrollY-15,'Webdir',1,30,String.fromCharCode(60009),'#FFFFFF');
                 }
-                this.context.textAlign = 'right';
+                WebNodeUI.context.textAlign = 'right';
                 WebNodeUI.DrawText(this.x+pin.x-(this.radius/2)+WebNodeUI.ScrollX,this.y+pin.y+WebNodeUI.ScrollY,this.fontsize*0.75,pin.name,'white');
                 this.drawConnections(pin,50);
            
@@ -385,6 +348,8 @@ class WebNodeDocument
         this.Nodes=[];
         this.Functions=[];
         this.Variabes=[];
+        this.Entrynode;
+        this.guid = WebNodeUI.uuidv4();
     }
 
     Draw()
@@ -409,9 +374,34 @@ class WebNodeDocument
 
     }
 
+    SaveDocument()
+    {
+        $('#savedocModal').modal('show');
+    }
+
     OnClick()
     {
         WebNodeUI.CurrentDoc = this.obj;
+
+    }
+
+
+
+    AddWebNode(path,isEntry=false)
+    {
+        $.get("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php?action=load-node&path="+path, function(data, status){
+        console.log(data);
+        var node = new WebNode(WebNodeUI.context,"",200,200,200,200,0);
+        var newnode = Object.assign(node, data);
+        newnode.guid = WebNodeUI.uuidv4();
+        newnode.Reload();
+        if(isEntry)
+        {
+            WebNodeUI.CurrentDoc.Entrynode = newnode;
+        }
+        WebNodeUI.CurrentDoc.Nodes.push(newnode);
+        //alert("Data: " + data + "\nStatus: " + status);
+        });
     }
 }
 
@@ -428,6 +418,7 @@ class WebNodeFunction extends WebNodeDocument
     {
         var myNode = new WebNode(ctx,'Entry to '+this.name,WebNodeUI.w/2,WebNodeUI.h/2,200,100,2);
         myNode.AddOutput("",vartypes.FLOW,0);   
+        this.Entrynode = myNode;
         this.Nodes.push(myNode);
     }
 
@@ -652,16 +643,22 @@ class WebNodeGUI
         this.LeftBarButtons = [];
         this.CurrentDoc;
         this.MainDoc;
+        this.NodeQueue;
+        this.CompiledData;
 
     }
 
     Init()
     {
         this.MenuButtons.push(new WebNodeGuiButton(61223,'New',20,5,80,80));
-        this.MenuButtons.push(new WebNodeGuiButton(61189,'Save',120,5,80,80));
+        var SaveButton = new WebNodeGuiButton(61189,'Save',120,5,80,80);
+        SaveButton.delegate = function() { WebNodeUI.MainDoc.SaveDocument(); };
+        this.MenuButtons.push(SaveButton);
         this.MenuButtons.push(new WebNodeGuiButton(61237,'Load',220,5,80,80));
         this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',320,5,80,80));
-        this.MenuButtons.push(new WebNodeGuiButton(61401,'Launch',420,5,80,80));
+        var b = new WebNodeGuiButton(61401,'Launch',420,5,80,80);
+        b.delegate = function() { WebNodeUI.Launch(); };
+        this.MenuButtons.push(b);
         this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
         this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc,this.MainDoc.OnClick);
         this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
@@ -1075,7 +1072,7 @@ class WebNodeGUI
             {
                 nx=selectedNode.x+selectedNode.inputs[selectedNode.selectedinputPin].x;
                 ny=selectedNode.y+selectedNode.inputs[selectedNode.selectedinputPin].y;
-                selectedNode.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
+                WebNodeUI.context.strokeStyle=colortype(selectedNode.inputs[selectedNode.selectedinputPin].t);
                 WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,nx-50+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
                 
                
@@ -1084,7 +1081,7 @@ class WebNodeGUI
             {
                 nx=selectedNode.x+selectedNode.outputs[selectedNode.selectedoutputPin].x;
                 ny=selectedNode.y+selectedNode.outputs[selectedNode.selectedoutputPin].y;
-                selectedNode.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
+                WebNodeUI.context.strokeStyle=colortype(selectedNode.outputs[selectedNode.selectedoutputPin].t);
                 WebNodeUI.DrawConnection(nx+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,nx+50+WebNodeUI.ScrollX,ny+WebNodeUI.ScrollY,WebNodeUI.mouseX,WebNodeUI.mouseY);
                 
                
@@ -1147,7 +1144,22 @@ class WebNodeGUI
         }
         return(false);
     }
+
+    Launch()
+    {
+        $('#launchModal').modal('show');
+        var saveit = JSON.stringify( WebNodeUI.MainDoc);
+
+        $.post("editorfunctions.php",{"postaction" : "compile-document", "doc" : saveit},function(data){
+            $.get("Launch/Launch.html", function(data, status){
+                $('#launchme').html(data);
+                });            
+        });
+
+        
+    }
     
+
     uuidv4() {
         return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
@@ -1223,15 +1235,27 @@ function CreateNewVariable()
         break;                
     }
     var nv = new WebVar(vname,v,null,vcon);
+    nv.guid = WebNodeUI.uuidv4();
     WebNodeUI.MainDoc.Variabes.push(nv);
     WebNodeUI.VariableList.AddItem(c,vname,nv,nv.OnClick,colortype(v));
     WebNodeUI.Draw();
+}
+
+
+function SaveMyDocument()
+{
+    var saveit = JSON.stringify( WebNodeUI.MainDoc);
+    WebNodeUI.MainDoc.name = $('#savedocModal').find('.modal-body input').val();
+    $.post("editorfunctions.php",{"postaction" : "save-document", "dir" : "Documents/Doc_"+WebNodeUI.MainDoc.name, "doc" : saveit},function(data){
+        alert("Data: " + data);
+    });
 }
 
 function CreateNewFunction()
 {
     
     var nf = new WebNodeFunction(WebNodeUI.canvas,WebNodeUI.context,'New Func');
+    nf.guid = WebNodeUI.uuidv4();
     WebNodeUI.CurrentDoc = nf;
     var fname = $('#newfuncModal').find('.modal-body input').val();
     nf.name = fname;
@@ -1247,7 +1271,12 @@ $(document).ready(function(){
         var modal = $(this);
         modal.find('.modal-body input').trigger('focus');
         modal.find('.modal-body input').val('New Func');
-        console.log("Hello world!");
+        //console.log("Hello world!");
     });
-
+    $('#savedocModal').on('show.bs.modal', function () {
+        var modal = $(this);
+        modal.find('.modal-body input').trigger('focus');
+        modal.find('.modal-body input').val(WebNodeUI.MainDoc.name);
+        //console.log("Hello world!");
+    });
 });

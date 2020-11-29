@@ -9,6 +9,12 @@
     <script src="https://zorlockstudios.com/NodeWeb/Editor/PixelFontCanvas.js"></script>
     <script src="https://zorlockstudios.com/NodeWeb/Editor/nodeweb.js"></script>
 </head>
+
+<body style="width:100%; height:100%;">
+    <canvas id="canvas" style="display:block;  height: 100vh; width: 100vw; "></canvas>
+    <script type="text/javascript" language="javascript">
+    Init();
+    </script>
 <div class="modal fade hide" id="newfuncModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -32,12 +38,29 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
-<body style="width:100%; height:100%;">
-    <canvas id="canvas" style="display:block;  height: 100vh; width: 100vw; "></canvas>
-    <script type="text/javascript" language="javascript">
-    Init();
-    </script>
-</body>
+<div class="modal fade hide" id="savedocModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="myModalLabel">New Function</h3>           
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="documentname" class="control-label">Document Name</label>
+                            <input type="text" class="form-control" id="documentname"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                    <button class="btn btn-primary" data-dismiss="modal" onclick="SaveMyDocument()">Save</button>
+                </div>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 <div class="modal fade hide" id="newvarModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -78,4 +101,22 @@
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->    
+<div class="modal fade hide" id="launchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="myModalLabel">Launch</h3>           
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+                <div id="launchme">
+                    <p>Please wait.. compiling.</p> 
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>                   
+                </div>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+</body>
