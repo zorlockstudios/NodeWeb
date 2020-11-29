@@ -108,7 +108,7 @@
             $fc = glob($dir.'/*.json');
             for ($i=0; $i < sizeof($fc); $i++) { 
                 $n = GrabNode($fc[$i]);
-                echo '<button type="button" class="list-group-item list-group-item-action" data-toggle="tooltip" data-placement="top" title="'.$n->description.'" onclick="WebNodeUI.MainDoc.AddWebNode('."'".$dir.'/'.basename($fc[$i], '.json')."'".');" data-dismiss="modal">'.$n->name.'</button>';
+                echo '<button type="button" class="list-group-item list-group-item-action" data-toggle="tooltip" data-html="true" data-placement="top" title="'.$n->description.'" onclick="WebNodeUI.MainDoc.AddWebNode('."'".$dir.'/'.basename($fc[$i], '.json')."'".');" data-dismiss="modal">'.$n->name.'</button>';
             }
             echo '</div>'; 
             /* This is the WRONG way to loop over the directory. */

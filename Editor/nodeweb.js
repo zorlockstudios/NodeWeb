@@ -73,7 +73,17 @@ function Init()
     window.addEventListener('DOMContentLoaded',LoadPixelFont);
     
     reOffset();
-   
+    //myNode = new WebNode(ctx,"Const String",350,280,200,100,2);
+    
+    //myNode.AddInput("Width",vartypes.FLOAT,0);
+    //myNode.AddInput("Height",vartypes.FLOAT,0);
+    //myNode.AddInput("Int",vartypes.INT,0);
+    //myNode.AddInput("Override",vartypes.STRING,0);
+
+    //myNode.AddOutput("Out String",vartypes.STRING,0); 
+    //var saveit = JSON.stringify(myNode);
+    //$.post("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/const.exp.string", "node" : saveit});
+
     WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.begin',true);
 }
 
@@ -189,6 +199,7 @@ class WebNode {
         this.selectedinputPin = -1;
         this.selectedoutputPin = -1;
         this.guid;
+        this.bhovering=false;
     }
 
     Reload()
@@ -210,6 +221,10 @@ class WebNode {
 
     MouseOver(mx,my)
     {
+        if(this.t==3)
+        {
+            //this.mouseOverEdit(mx,my);
+        }
         if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.radius){
             return(true);
         } else {
@@ -258,12 +273,39 @@ class WebNode {
         this.outputs.push(myOutput);
     }
 
-    drawThisNode()
+    drawThisNode(sel=false)
     {
         
-        WebNodeUI.DrawNode(this.name,this.x+WebNodeUI.ScrollX, this.y+WebNodeUI.ScrollY, this.w, this.h,this.t);
+        WebNodeUI.DrawNode(this.name,this.x+WebNodeUI.ScrollX, this.y+WebNodeUI.ScrollY, this.w, this.h,this.t,sel);
         this.drawPins(this.inputs,0);
         this.drawPins(this.outputs,1);
+    }
+
+    drawEditButton()
+    {
+        WebNodeUI.context.strokeStyle = 'Black';
+        WebNodeUI.context.lineWidth = 2;
+        if(this.bhovering)
+        {
+            WebNodeUI.context.fillStyle = 'GoldenRod';
+        } else {
+            WebNodeUI.context.fillStyle = 'Gray';
+        }
+        WebNodeUI.context.fillRect(this.x+(this.w/4)+WebNodeUI.ScrollX, this.y+this.radius+((this.h-this.radius)/4)+WebNodeUI.ScrollY, this.w/4, (this.h-this.radius)/4);         
+        WebNodeUI.DrawIcon(this.x+5+(this.w/4)+WebNodeUI.ScrollX,this.y+((this.h/2)-5)+this.radius+((this.h-this.radius)/4)+WebNodeUI.ScrollY,'Webapp',0.25,10,String.fromCharCode('61200'),'#FFFFFF');
+        WebNodeUI.context.textAlign = 'left';
+        WebNodeUI.context.shadowBlur = 2;
+        WebNodeUI.context.shadowColor = 'Black';
+        WebNodeUI.DrawText(this.x+20+(this.w/4)+WebNodeUI.ScrollX,this.y+this.fontsize+(this.fontsize/2)+this.radius+((this.h-this.radius)/4)+WebNodeUI.ScrollY,10,'Edit','white');   
+    }
+
+    mouseOverEdit(mx,my)
+    {
+        if( mx>this.x+(this.w/4) && mx<this.x+(this.w/4)+(this.w/4) && my>this.y+this.radius+((this.h-this.radius)/4) && my<this.y+this.radius+((this.h-this.radius)/4)+((this.h-this.radius)/4)){
+            this.bhovering = true;
+        } else {
+            this.bhovering = false;
+        }  
     }
 
     drawConnections(pin,control)
@@ -353,7 +395,12 @@ class WebNodeDocument
     {
         WebNodeUI.DrawText(w-(w/6)-20,h-45,50,this.name,'rgba(255, 200, 0, 0.2)');
         for (let index = 0; index < this.Nodes.length; index++) {
-            this.Nodes[index].drawThisNode();
+            if(index==WebNodeUI.selectedShapeIndex)
+            {
+                this.Nodes[index].drawThisNode(true);
+            } else {
+                this.Nodes[index].drawThisNode(false);
+            }
             
         }
     }
@@ -400,6 +447,7 @@ class WebNodeDocument
             WebNodeUI.CurrentDoc.Entrynode = newnode;
         }
         WebNodeUI.CurrentDoc.Nodes.push(newnode);
+        WebNodeUI.Draw();
         //alert("Data: " + data + "\nStatus: " + status);
         });
     }
@@ -646,6 +694,8 @@ class WebNodeGUI
         this.NodeQueue;
         this.CompiledData;
 
+        this.SelectedNodeInfo;
+
     }
 
     Init()
@@ -667,16 +717,14 @@ class WebNodeGUI
         this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
         this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc,this.MainDoc.OnClick);
         this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
-        this.VariableList = new WebNodeGuiListView(61374,'Variables',5,560,100,300);
-        
+        this.VariableList = new WebNodeGuiListView(61374,'Variables',5,560,100,300);       
         this.NewFunction = new WebNodeGuiButton(61378,'New',35,240,60,40);
         this.NewFunction.align = "left";
         this.NewFunction.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
-
         this.NewVariable = new WebNodeGuiButton(61378,'New',35,560,60,40);
         this.NewVariable.align = "left";
         this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewVariable(); };
-
+        this.SelectedNodeInfo = new WebNodeGuiListView(61136,'Node Info',5,120,100,300);
         this.CurrentDoc = this.MainDoc;
         //this.LeftBarButtons.push(button);
         //this.LeftBarButtons.push();
@@ -733,13 +781,19 @@ class WebNodeGUI
         this.context.fillText(text,x,y);
     }
 
-    RoundRect(x, y, w, h, radius, gradient)
+    RoundRect(x, y, w, h, radius, gradient,sel=false)
     {
       var r = x + w;
       var b = y + h;
       this.context.beginPath();
-      this.context.strokeStyle="white";
-      this.context.lineWidth="4";
+      if(sel)
+      {
+        this.context.strokeStyle="Gold";
+        this.context.lineWidth="5";
+      } else {
+        this.context.strokeStyle="white";
+        this.context.lineWidth="4";
+      }
       this.context.moveTo(x+radius, y);
       this.context.lineTo(r-radius, y);
       this.context.quadraticCurveTo(r, y, r, y+radius);
@@ -799,6 +853,10 @@ class WebNodeGUI
                 var colors = ['MediumOrchid','Purple','black'];
                 g = this.NodeGradient(x,y,w,h,colors);
             break;
+            case 3:
+                var colors = ['Gold','SandyBrown','black'];
+                g = this.NodeGradient(x,y,w,h,colors);
+            break;
             default:
                 var colors = ['darkgrey','dimgrey','black'];
                 g = this.NodeGradient(x,y,w,h,colors);
@@ -806,12 +864,12 @@ class WebNodeGUI
         return(g);
     }
 
-    DrawNode(name,x,y,w,h,t)
+    DrawNode(name,x,y,w,h,t,sel=false)
     {
         var radius = 20;
         var fontsize =12;
         var g = this.GetNodeGradient(x,y,w,h,t);    
-        this.RoundRect(x, y, w, h, radius, g);
+        this.RoundRect(x, y, w, h, radius, g, sel);
         this.context.textAlign = 'left';
         this.DrawText(x+(radius-(fontsize/2)),y+(radius-(fontsize/2)),fontsize,name,'white');
 
@@ -849,6 +907,17 @@ class WebNodeGUI
     {
         WebNodeUI.context.fillStyle = 'DimGrey';
         WebNodeUI.context.fillRect(w-(w/6), 50, w/6, h);
+
+        if(WebNodeUI.selectedShapeIndex>-1)
+        {
+            WebNodeUI.SelectedNodeInfo.label = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex].name;
+            
+        } else {
+            WebNodeUI.SelectedNodeInfo.label = 'Node Info';
+        }
+        WebNodeUI.SelectedNodeInfo.x = w-(w/6)+5;
+        WebNodeUI.SelectedNodeInfo.w = (w/6)-5;
+        WebNodeUI.SelectedNodeInfo.Draw();
     }
 
     DrawMenuBar()
@@ -1206,6 +1275,7 @@ function AddNodeFunction(dir)
         $('#nodescontent').html(data);
     //alert("Data: " + data + "\nStatus: " + status);
     });
+    
 }
 
 function CreateNewVariable()

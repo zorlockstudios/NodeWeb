@@ -1,0 +1,38 @@
+{
+    "name":"Add External JS",
+    "x":350,
+    "y":280,
+    "w":200,
+    "h":100,
+    "t":1,
+    "templatepath":"Nodes/HTML/add.js.tag.php",
+    "description": "Adds an HTML Script tag using input source file",
+    "context":{},
+    "inputs":
+    [
+        {
+            "name":"Source",
+            "t":3,
+            "containerType":0,
+            "x":20,
+            "y":40,
+            "connections":[]
+        }
+    ],
+    "outputs":
+    [
+        {
+            "name":"Out <Script>",
+            "t":3,
+            "containerType":0,
+            "x":180,
+            "y":40,
+            "connections":[]
+        }
+    ],
+    "radius":20,
+    "fontsize":12,
+    "g":{},
+    "selectedinputPin":-1,
+    "selectedoutputPin":-1
+}
