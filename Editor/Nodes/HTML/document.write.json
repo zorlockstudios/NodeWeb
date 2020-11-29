@@ -6,6 +6,7 @@
     "h":100,
     "t":0,
     "templatepath":"Nodes/HTML/document.write.template.php",
+    "description": "Outputs an html document",
     "context":{},
     "inputs":
     [

@@ -6,6 +6,7 @@
     "h":100,
     "t":1,
     "templatepath":"Nodes/HTML/add.string.php",
+    "description": "Adds two strings together",
     "context":
     {
 

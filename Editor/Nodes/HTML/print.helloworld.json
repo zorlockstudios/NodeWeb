@@ -6,6 +6,7 @@
     "h":100,
     "t":1,
     "templatepath":"Nodes/HTML/print.helloworld.php",
+    "description": "Preset string containing Hello World!",
     "context":
     {
 

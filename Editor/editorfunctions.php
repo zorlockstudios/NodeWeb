@@ -15,8 +15,11 @@
 
         case "load-nodes":
             //$filteredDir = array_slice( array_diff( scandir( "/Nodes" ), array( '..', '.', '.DS_Store' ) ), 0 );
-            header('Content-Type: application/json');
-            echo json_encode(getDirContents('Nodes'));  
+            //header('Content-Type: application/json');
+            //$f = getDirContents('Nodes');
+            $path = $_GET["dir"];
+            GetNodeList($path);
+            //echo json_encode(getDirContents('Nodes'));  
             exit();
         break;
 
@@ -58,6 +61,61 @@
         break;
 
         default:
+    }
+
+    function GrabNode($f)
+    {
+        $content =  file_get_contents($f);
+        return json_decode($content);
+    }
+
+    function GetNodeList($dir)
+    {
+        if ($handle = opendir($dir)) {
+            //echo "Directory handle: $handle\n";
+            //echo "Entries:\n";
+            echo '<nav aria-label="breadcrumb">
+            <ol class="breadcrumb">';
+
+            $bc = explode('/',$dir);
+            for ($i=0; $i < sizeof($bc); $i++) { 
+                # code...
+                if($i==sizeof($bc)-1)
+                {
+                    echo '<li class="breadcrumb-item active" aria-current="page">'.$bc[$i].'</li>';
+                } else {
+                    echo '<li class="breadcrumb-item" aria-current="page"><a href="#" onclick="AddNodeFunction('."'".$bc[$i]."'".')">'.$bc[$i].'</a></li>';
+                }
+            }
+            echo '  </ol>
+            </nav>';
+
+            echo '<div class="list-group">';
+            /* This is the correct way to loop over the directory. */
+            while (false !== ($entry = readdir($handle))) {
+
+                if($entry!='.' && $entry!='..')
+                {
+                    if(is_dir($dir.'/'.$entry))
+                    {
+                        $fc = glob($dir.'/'.$entry.'/*.json');
+                        echo '<button type="button" class="list-group-item d-flex justify-content-between align-items-center list-group-item-action" onclick="AddNodeFunction('."'".$dir.'/'.$entry."'".')">'.$entry.'<span class="badge badge-primary badge-pill">'.sizeof($fc).'</span></button>';
+
+                    } 
+                }
+       
+            }
+            $fc = glob($dir.'/*.json');
+            for ($i=0; $i < sizeof($fc); $i++) { 
+                $n = GrabNode($fc[$i]);
+                echo '<button type="button" class="list-group-item list-group-item-action" data-toggle="tooltip" data-placement="top" title="'.$n->description.'" onclick="WebNodeUI.MainDoc.AddWebNode('."'".$dir.'/'.basename($fc[$i], '.json')."'".');" data-dismiss="modal">'.$n->name.'</button>';
+            }
+            echo '</div>'; 
+            /* This is the WRONG way to loop over the directory. */
+
+            closedir($handle);
+        }
+
     }
 
     function getDirContents($dir, &$results = array()) {

@@ -75,9 +75,6 @@ function Init()
     reOffset();
    
     WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.begin',true);
-    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/print.helloworld');
-    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.write');
-    WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/add.string');
 }
 
 
@@ -372,7 +369,10 @@ class WebNodeDocument
 
         $('#newfuncModal').modal('show');
 
+
     }
+
+
 
     SaveDocument()
     {
@@ -655,14 +655,20 @@ class WebNodeGUI
         SaveButton.delegate = function() { WebNodeUI.MainDoc.SaveDocument(); };
         this.MenuButtons.push(SaveButton);
         this.MenuButtons.push(new WebNodeGuiButton(61237,'Load',220,5,80,80));
-        this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',320,5,80,80));
-        var b = new WebNodeGuiButton(61401,'Launch',420,5,80,80);
+
+        var nb = new WebNodeGuiButton(61176,'Nodes',320,5,80,80);
+        nb.delegate = function() { AddNodeFunction('Nodes'); };
+        this.MenuButtons.push(nb);   
+
+        this.MenuButtons.push(new WebNodeGuiButton(61409,'Compile',420,5,80,80));
+        var b = new WebNodeGuiButton(61401,'Launch',520,5,80,80);
         b.delegate = function() { WebNodeUI.Launch(); };
         this.MenuButtons.push(b);
         this.GraphList = new WebNodeGuiListView(61419,'Node Graphs',5,120,100,100);
         this.GraphList.AddItem(61266,this.MainDoc.name,this.MainDoc,this.MainDoc.OnClick);
         this.FunctionList = new WebNodeGuiListView(61375,'Functions',5,240,100,300);
         this.VariableList = new WebNodeGuiListView(61374,'Variables',5,560,100,300);
+        
         this.NewFunction = new WebNodeGuiButton(61378,'New',35,240,60,40);
         this.NewFunction.align = "left";
         this.NewFunction.delegate = function() { WebNodeUI.MainDoc.AddNewFunction(); };
@@ -1190,6 +1196,16 @@ function LoadPixelFont(e)
     PixelFontCanvas.loadFont('BMFont/', 'Webdir.fnt', (data) => { pixelDirFontLoaded = true; WebNodeUI.Draw(); });
     PixelFontCanvas.loadFont('BMFont/', 'Webapp.fnt', (data) => { pixelFontLoaded=true; WebNodeUI.Draw(); });
 
+}
+
+function AddNodeFunction(dir)
+{   
+
+    $('#nodesModal').modal('show');
+    $.get("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php?action=load-nodes&dir="+dir, function(data, status){
+        $('#nodescontent').html(data);
+    //alert("Data: " + data + "\nStatus: " + status);
+    });
 }
 
 function CreateNewVariable()
