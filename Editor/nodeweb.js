@@ -612,6 +612,11 @@ class WebNodeGuiListView extends WebNodeGuiWidget
 
     }
 
+    Clear()
+    {
+        this.container = [];
+    }
+
     MouseOver(mx,my)
     {
         if( mx>this.x && mx<this.x+this.w && my>this.y && my<this.y+this.h){
@@ -724,7 +729,7 @@ class WebNodeGUI
         this.NewVariable = new WebNodeGuiButton(61378,'New',35,560,60,40);
         this.NewVariable.align = "left";
         this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewVariable(); };
-        this.SelectedNodeInfo = new WebNodeGuiListView(61136,'Node Info',5,120,100,300);
+        this.SelectedNodeInfo = new WebNodeGuiListView(61136,'Node Inputs',5,120,100,300);
         this.CurrentDoc = this.MainDoc;
         //this.LeftBarButtons.push(button);
         //this.LeftBarButtons.push();
@@ -947,6 +952,42 @@ class WebNodeGUI
             });
         }
     }
+
+    UpdateNodeVariableList()
+    {
+        WebNodeUI.SelectedNodeInfo.Clear();
+        var node = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex];
+        for (let index = 0; index < node.inputs.length; index++) 
+        {
+            var wv = node.inputs[index];
+            if(wv.t!=4) //ignore flow inputs
+            {
+                var c = 61338;
+                switch(wv.containerType)
+                {
+                    case 1:
+                        c = 61346; 
+                    break;
+            
+                    case 2:
+                        c = 61301;
+                    break;
+                }
+                //add an onclick to change default vals
+                wv.OnClick = function() { 
+                    var me = WebNodeUI.hoveringElement.obj;
+                    $('#updateDefaultVal').find('#defaultValLabel').html(me.name);
+                    $('#updateDefaultVal').find('#valueval').val(me.defaultval);
+                    $('#updateDefaultVal').modal('show');
+                };
+                WebNodeUI.SelectedNodeInfo.AddItem(c,wv.name,wv,wv.OnClick,colortype(wv.t));
+            }
+        }
+
+        
+        
+    }
+
     HandleMouseDown(e){
         // tell the browser we're handling this event
         e.preventDefault();
@@ -962,10 +1003,13 @@ class WebNodeGUI
                     if(WebNodeUI.CurrentDoc.Nodes[i].MouseOver(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
                     {
                         WebNodeUI.selectedShapeIndex=i;
+                        //Update the UI
+                        WebNodeUI.UpdateNodeVariableList();
                         // set the isDragging flag
                         WebNodeUI.isDragging=true;
                         // and return (==stop looking for 
                         //     further shapes under the mouse)
+                        WebNodeUI.Draw();
                         return;
                     }
                     if(WebNodeUI.CurrentDoc.Nodes[i].OverPin(WebNodeUI.startX-WebNodeUI.ScrollX,WebNodeUI.startY-WebNodeUI.ScrollY))
@@ -1201,6 +1245,11 @@ class WebNodeGUI
         {
             WebNodeUI.isHoveringUI=true;
             WebNodeUI.hoveringElement=WebNodeUI.FunctionList.hoveringElement;            
+        }
+        if(WebNodeUI.SelectedNodeInfo.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.SelectedNodeInfo.hoveringElement;            
         }
         if(WebNodeUI.NewFunction.MouseOver(mx,my))
         {

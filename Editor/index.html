@@ -74,7 +74,7 @@
                     <input type="text" class="form-control" id="varname"></textarea>
                     <label for="vartype" class="control-label">Variable Type</label>
                     <div class="form-group" id="form-vartype">
-                        <select id="vartype">
+                        <select id="vartype" class="custom-select custom-select-lg mb-3">
                             <option>Int</option>
                             <option>Float</option>
                             <option>String</option>
@@ -87,7 +87,7 @@
                     </div>
                     <label for="contype" class="control-label">Data Container</label>
                     <div class="form-group" id="form-contype">
-                        <select id="varcon">
+                        <select id="varcon" class="custom-select custom-select-lg mb-3">
                             <option>Single</option>
                             <option>Array</option>
                             <option>Map</option>
@@ -122,17 +122,42 @@
     </div><!-- /.modal-dialog -->
 </div>
 <div class="modal fade hide" id="launchModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title" id="myModalLabel">Launch</h3>           
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                 </div>
-                <div id="launchme">
-                    <p>Please wait.. compiling.</p> 
+                <div id="launchme" class="embed-responsive embed-responsive-16by9">
+                    <div class="spinner-border" style="width: 5rem; height: 5rem;" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>                   
+                </div>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade hide" id="updateDefaultVal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="myModalLabel">Set Default Value</h3>           
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="valuenname" class="control-label" id="defaultValLabel">Value Name</label>
+                            <input type="text" class="form-control" id="valueval" placeholder="The Value"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+                    <button class="btn btn-primary" data-dismiss="modal" onclick="">Update</button>
                 </div>
             </div>
         </div><!-- /.modal-content -->
