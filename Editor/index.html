@@ -128,10 +128,10 @@
                     <h3 class="modal-title" id="myModalLabel">Launch</h3>           
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                 </div>
-                <div id="launchme" class="embed-responsive embed-responsive-16by9">
-                    <div class="spinner-border" style="width: 5rem; height: 5rem;" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
+                <div id="launched" class="embed-responsive embed-responsive-16by9">
+                    <div class="embed-responsive embed-responsive-21by9">
+                        <iframe class="embed-responsive-item" src="Launch/empty.html" id="launchme" allowfullscreen></iframe>
+                      </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>                   
@@ -151,13 +151,14 @@
                     <form>
                         <div class="form-group">
                             <label for="valuenname" class="control-label" id="defaultValLabel">Value Name</label>
-                            <input type="text" class="form-control" id="valueval" placeholder="The Value"></textarea>
+                            <input type="text" class="form-control" id="valueval" placeholder="The Value"/>
+                            <input type="hidden" name="guid" id="guid"/>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-                    <button class="btn btn-primary" data-dismiss="modal" onclick="">Update</button>
+                    <button class="btn btn-primary" data-dismiss="modal" onclick="UpdateVarDefaults()">Update</button>
                 </div>
             </div>
         </div><!-- /.modal-content -->

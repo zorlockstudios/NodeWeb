@@ -1,0 +1,38 @@
+{
+    "name":"HTML Header",
+    "x":350,
+    "y":280,
+    "w":200,
+    "h":100,
+    "t":1,
+    "templatepath":"Nodes/HTML/document.header.php",
+    "description": "Outputs a header tag with contents for HTML",
+    "context":{},
+    "inputs":
+    [
+        {
+            "name":"Input",
+            "t":3,
+            "containerType":0,
+            "x":20,
+            "y":40,
+            "connections":[]
+        }
+    ],
+    "outputs":
+    [
+        {
+            "name":"Output",
+            "t":3,
+            "containerType":0,
+            "x":180,
+            "y":40,
+            "connections":[]
+        }
+    ],
+    "radius":20,
+    "fontsize":12,
+    "g":{},
+    "selectedinputPin":-1,
+    "selectedoutputPin":-1
+}

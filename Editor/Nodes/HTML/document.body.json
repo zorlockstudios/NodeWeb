@@ -1,0 +1,38 @@
+{
+    "name":"HTML Body",
+    "x":350,
+    "y":280,
+    "w":200,
+    "h":100,
+    "t":1,
+    "templatepath":"Nodes/HTML/document.body.php",
+    "description": "Outputs the Body Tag for the web Content",
+    "context":{},
+    "inputs":
+    [
+        {
+            "name":"Input",
+            "t":3,
+            "containerType":0,
+            "x":20,
+            "y":40,
+            "connections":[],
+            "guid":"5d1aa0cb-c66e-4cb6-82e7-0192b201e3e4"
+        }
+    ],
+    "outputs":
+    [
+        {
+            "name":"Output",
+            "t":3,"containerType":0,
+            "x":180,
+            "y":40,
+            "connections":[]
+        }
+    ],
+    "radius":20,
+    "fontsize":12,
+    "g":{},
+    "selectedinputPin":-1,
+    "selectedoutputPin":-1
+}

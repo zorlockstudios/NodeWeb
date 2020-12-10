@@ -11,7 +11,7 @@ $nr = json_decode($data);
 
 $res = new NodeRequest;
 $res->inputs = $data->inputs;
-$val = "begin html <br/>";
+$val = "<html>";
 //blank val on array 0
 array_push($res->outputs,"");
 array_push($res->outputs,$val);

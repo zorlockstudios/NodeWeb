@@ -196,13 +196,15 @@
         {
             $this->currentval = $this->defaultval;
                 //ignore if flow node
-            if($this->connections[$i]->t!=4)
+            if($this->connections[$i]!=null)
             {
-                //need previous parents to compile to get final output
-                $this->connections[$i]->B->parent->Compile();
-                $this->currentval = $this->connections[$i]->B->currentval;
+                if($this->connections[$i]->t!=4)
+                {
+                    //need previous parents to compile to get final output
+                    $this->connections[$i]->B->parent->Compile();
+                    $this->currentval = $this->connections[$i]->B->currentval;
+                }
             }
-            
             //perform node action on value
 
         }
@@ -275,11 +277,11 @@
                 {
                     //need the final values before we can compile node.
                     //does our input have any connections?
-                    if(sizeof($this->inputs[$i]->connections)>0)
-                    {
+                    //if(sizeof($this->inputs[$i]->connections)>0)
+                    //{
                         //for inputs there should only be one connection.
-                        $this->inputs[$i]->GetFinalVal(0);
-                    }
+                    $this->inputs[$i]->GetFinalVal(0);
+                    //}
                     
                 }
                 array_push($req->inputs,$this->inputs[$i]->currentval);

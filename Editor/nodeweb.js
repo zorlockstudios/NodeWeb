@@ -73,16 +73,16 @@ function Init()
     window.addEventListener('DOMContentLoaded',LoadPixelFont);
     
     reOffset();
-    //myNode = new WebNode(ctx,"Const String",350,280,200,100,2);
+    myNode = new WebNode(ctx,"HTML Body",350,280,200,100,2);
     
     //myNode.AddInput("Width",vartypes.FLOAT,0);
     //myNode.AddInput("Height",vartypes.FLOAT,0);
     //myNode.AddInput("Int",vartypes.INT,0);
-    //myNode.AddInput("Override",vartypes.STRING,0);
+    myNode.AddInput("Input",vartypes.STRING,0);
 
-    //myNode.AddOutput("Out String",vartypes.STRING,0); 
-    //var saveit = JSON.stringify(myNode);
-    //$.post("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/const.exp.string", "node" : saveit});
+    myNode.AddOutput("Output",vartypes.STRING,0); 
+    var saveit = JSON.stringify(myNode);
+    $.post("https://zorlockstudios.com/NodeWeb/Editor/editorfunctions.php",{"postaction" : "save-node", "dir" : "Nodes/HTML/document.body", "node" : saveit});
 
     WebNodeUI.MainDoc.AddWebNode('Nodes/HTML/document.begin',true);
 }
@@ -374,6 +374,20 @@ class WebNode {
             }
         }
     }
+
+    UpdateVariable(guid,val)
+    {
+        for (let index = 0; index < this.inputs.length; index++) {
+            var variable = this.inputs[index];
+            if(variable.guid==guid)
+            {
+                variable.defaultval = val;
+                variable.currentval = val;
+                return(true);
+            }    
+        }
+        return(false);
+    }
     
 }
 
@@ -405,6 +419,8 @@ class WebNodeDocument
         }
     }
 
+
+
     AddNewVariable()
     {
         //var nv = new WebVar(name,t,parent,containerType);
@@ -432,6 +448,32 @@ class WebNodeDocument
 
     }
 
+    UpdateValue()
+    {
+
+        var val = $('#updateDefaultVal').find('#valueval').val();
+        var guid = $('#updateDefaultVal').find('#guid').val();
+    
+        //find the variable
+        for (let index = 0; index < this.Variabes.length; index++) {
+            var variable = this.Variabes[index];
+            if(variable.guid==guid)
+            {
+                variable.defaultval = val;
+                variable.currentval = val;
+                return;
+            }
+        }
+
+        //check nodes
+        for (let index = 0; index < this.Nodes.length; index++) {
+            var n = this.Nodes[index];
+            if(n.UpdateVariable(guid,val))
+            {
+                return;
+            }
+        }
+    }
 
 
     AddWebNode(path,isEntry=false)
@@ -915,7 +957,12 @@ class WebNodeGUI
 
         if(WebNodeUI.selectedShapeIndex>-1)
         {
-            WebNodeUI.SelectedNodeInfo.label = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex].name;
+            if(WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex]!=null)
+            {
+                WebNodeUI.SelectedNodeInfo.label = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex].name;
+            } else {
+                WebNodeUI.SelectedNodeInfo.label = 'Node Info';
+            }
             
         } else {
             WebNodeUI.SelectedNodeInfo.label = 'Node Info';
@@ -978,6 +1025,7 @@ class WebNodeGUI
                     var me = WebNodeUI.hoveringElement.obj;
                     $('#updateDefaultVal').find('#defaultValLabel').html(me.name);
                     $('#updateDefaultVal').find('#valueval').val(me.defaultval);
+                    $('#updateDefaultVal').find('#guid').val(me.guid);
                     $('#updateDefaultVal').modal('show');
                 };
                 WebNodeUI.SelectedNodeInfo.AddItem(c,wv.name,wv,wv.OnClick,colortype(wv.t));
@@ -1275,9 +1323,11 @@ class WebNodeGUI
         var saveit = JSON.stringify( WebNodeUI.MainDoc);
 
         $.post("editorfunctions.php",{"postaction" : "compile-document", "doc" : saveit},function(data){
-            $.get("Launch/Launch.html", function(data, status){
-                $('#launchme').html(data);
-                });            
+            $("#launchme").attr("src", "Launch/Launch.html"); 
+            //document.getElementById('#launchme').contentDocument.location.reload(true);
+            //$.get("Launch/Launch.html", function(data, status){
+                //$('#launchme').html(data);
+                //});            
         });
 
         
@@ -1376,6 +1426,11 @@ function CreateNewVariable()
     WebNodeUI.Draw();
 }
 
+
+function UpdateVarDefaults()
+{
+    WebNodeUI.CurrentDoc.UpdateValue();
+}
 
 function SaveMyDocument()
 {
