@@ -735,6 +735,7 @@ class WebNodeGUI
         this.VariableList;
         this.NewFunction;
         this.NewVariable;
+        this.NewOutput;
         this.LeftBarButtons = [];
         this.CurrentDoc;
         this.MainDoc;
@@ -772,6 +773,9 @@ class WebNodeGUI
         this.NewVariable.align = "left";
         this.NewVariable.delegate = function() { WebNodeUI.MainDoc.AddNewVariable(); };
         this.SelectedNodeInfo = new WebNodeGuiListView(61136,'Node Inputs',5,120,100,300);
+        
+        this.NewOutput = new WebNodeGuiButton(61378,'Output',5,120,60,40);
+        this.NewOutput.align = "left";
         this.CurrentDoc = this.MainDoc;
         //this.LeftBarButtons.push(button);
         //this.LeftBarButtons.push();
@@ -954,22 +958,32 @@ class WebNodeGUI
     {
         WebNodeUI.context.fillStyle = 'DimGrey';
         WebNodeUI.context.fillRect(w-(w/6), 50, w/6, h);
+        WebNodeUI.SelectedNodeInfo.x = w-(w/6)+5;
+        WebNodeUI.SelectedNodeInfo.w = (w/6)-5;
 
         if(WebNodeUI.selectedShapeIndex>-1)
         {
             if(WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex]!=null)
             {
                 WebNodeUI.SelectedNodeInfo.label = WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex].name;
+                WebNodeUI.SelectedNodeInfo.Draw();
+                if(WebNodeUI.CurrentDoc.Nodes[WebNodeUI.selectedShapeIndex].t==2)
+                {
+                    WebNodeUI.NewOutput.w = WebNodeUI.SelectedNodeInfo.w/3;
+                    WebNodeUI.NewOutput.x = (WebNodeUI.SelectedNodeInfo.x+WebNodeUI.SelectedNodeInfo.w)-(WebNodeUI.SelectedNodeInfo.w/3)-5;
+                    WebNodeUI.NewOutput.Draw();
+                }
             } else {
                 WebNodeUI.SelectedNodeInfo.label = 'Node Info';
+                WebNodeUI.SelectedNodeInfo.Draw();
             }
             
         } else {
             WebNodeUI.SelectedNodeInfo.label = 'Node Info';
+            WebNodeUI.SelectedNodeInfo.Draw();
         }
-        WebNodeUI.SelectedNodeInfo.x = w-(w/6)+5;
-        WebNodeUI.SelectedNodeInfo.w = (w/6)-5;
-        WebNodeUI.SelectedNodeInfo.Draw();
+
+        
     }
 
     DrawMenuBar()
@@ -1308,6 +1322,11 @@ class WebNodeGUI
         {
             WebNodeUI.isHoveringUI=true;
             WebNodeUI.hoveringElement=WebNodeUI.NewVariable;
+        }
+        if(WebNodeUI.NewOutput.MouseOver(mx,my))
+        {
+            WebNodeUI.isHoveringUI=true;
+            WebNodeUI.hoveringElement=WebNodeUI.NewOutput;
         }
         if(oldstate!=WebNodeUI.isHoveringUI)
         {
